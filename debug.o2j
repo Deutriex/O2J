@@ -1,0 +1,10 @@
+window.onerror = new function(message, url, line){
+	//alert(message + "\n" + url + "\n" + line)
+}
+
+/*
+function alert(){
+	debugFile = new textfile(program.getPath() + "\\debug.txt")
+	debugFile.append(arguments.callee.caller)
+}
+*/

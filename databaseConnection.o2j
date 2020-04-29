@@ -1,0 +1,267 @@
+var o2jDBConstants = {
+	readOnly: true,
+	readWrite: false
+}
+
+function connection(dbAddr, readOnly){
+	var debugMode = false //arguments[1]
+	var kasIns = 0
+	var ndefsArray = new Array()
+	var relatFile = new textfile(dbAddr)
+	var readFile = relatFile.passThru().split(lineBreak)
+	var currentSection = ""
+	var selectedSection = ""
+	var selectedSectionIndex = 0
+
+	yzx = 0
+
+	for (xyz = 0; xyz < readFile.length; xyz++){
+		if (readFile[xyz].charAt(0) != tabulation){
+
+			ndefsArray[readFile[xyz]] = new Array()
+			ndefsArray[readFile[xyz]].NAME = readFile[xyz]
+
+			ndefsArray[yzx] = ndefsArray[readFile[xyz]]
+			//ndefsArray[yzx]['Name'] = readFile[xyz]
+			currentSection = readFile[xyz]
+			yzx++
+		} else {
+			getValues = readFile[xyz].substring(1,readFile[xyz].length)
+			getValues = getValues.split(' = ')
+
+			if (kasIns != 1) ndefsArray[currentSection][getValues[0]] = getValues[1]
+			else ndefsArray[currentSection][getValues[0].toUpperCase()] = getValues[1]
+
+			ndefsArray[currentSection][ndefsArray[currentSection].length] = new Array(getValues[0],getValues[1])
+		}
+	}
+
+	if (!selectedSection && ndefsArray[0]){
+		selectedSection = ndefsArray[0].NAME
+	}
+
+	this.databasePath = function(){
+		return dbAddr
+	}
+
+	this.getSection = function(){
+		return selectedSection
+	}
+
+	this.moveNext = function(){
+		//if (selectedSectionIndex < ndefsArray.length){
+			try {
+				selectedSection = ndefsArray[++selectedSectionIndex].NAME
+				return selectedSection
+			} catch (err){
+				this.moveFirst()
+				return false
+			}
+		//}
+	}
+
+	this.moveFirst = function(){
+		selectedSection = ndefsArray[0].NAME
+		selectedSectionIndex = 0
+		return selectedSection
+	}
+
+	this.atEnd = function(){
+		if (selectedSectionIndex >= ndefsArray.length) return true
+		return false
+	}
+
+	readOnlyError = function(){
+		if (readOnly){
+			throw new Error(this.databasePath() + ' is for reading only')
+			return false
+		}
+	}
+	
+	this.setSection = function(modif){
+		if (!arguments.length) return false
+
+/*
+		if (ndefsArray[modif]){
+			selectedSection = modif
+			return true
+		} else {
+*/
+		for (iopx = 0; iopx < ndefsArray.length; iopx++){
+			if (new String(ndefsArray[iopx].NAME).toUpperCase() == new String(modif).toUpperCase()){
+
+				selectedSection = modif
+				selectedSectionIndex = iopx
+				return true
+
+			}			
+
+			return false 
+		}
+	}
+
+	this.getAttribute = function(ndefsAttribute, searchDirection){
+		if (!searchDirection) searchDirection = 0
+
+		// searchDirection
+		// 0 - default
+		// 1 - reverse
+
+		if (selectedSection == "") selectedSection = ndefsArray[0].NAME
+		//if (debugMode == "debug") alert(dbAddr + " " + ndefsArray)
+
+		if (ndefsArray[selectedSection] && ndefsArray[selectedSection][ndefsAttribute] && !searchDirection){
+			return ndefsArray[selectedSection][ndefsAttribute]
+		} else {
+
+			
+			//if (dbAddr.indexOf('rativa') != -1 && ndefsAttribute.toLowerCase().indexOf('day') != -1) alert(ndefsAttribute + "\n" + ndefsArray) //
+
+			for (jhf = 0; jhf < ndefsArray.length; jhf++){
+
+				if (dbAddr.indexOf('rativa') != -1 && ndefsAttribute.toLowerCase().indexOf('day') != -1) {
+					//alert(ndefsArray[jhf]['Name'] + "\n\n" + selectedSection)
+				}
+
+				if (ndefsArray[jhf].NAME == selectedSection){
+					for (qwe = 0; qwe < ndefsArray[jhf].length; qwe++){
+
+						if (new String(ndefsArray[jhf][qwe][searchDirection]).toUpperCase() == ndefsAttribute.toUpperCase()){
+							return ndefsArray[jhf][qwe][1-searchDirection]
+						}
+					}
+				}
+			}
+			return undefined
+		} 
+	}
+
+	this.setAttribute = function(ndefsAttribute, newVal){
+		readOnlyError()
+		if (selectedSection == "") selectedSection = ndefsArray[0].NAME
+		ndefsArray[selectedSection][ndefsAttribute] = newVal
+
+		for (x = 0; x < readFile.length; x++){
+			if (readFile[x].toUpperCase() == selectedSection.toUpperCase()){
+				currentSection = selectedSection.toUpperCase()
+			} else if (currentSection.toUpperCase() == selectedSection.toUpperCase()){
+				if (readFile[x].charAt(0) != tabulation){
+					break
+				}
+
+				getValues = tabTrim(readFile[x])
+				getValues = getValues.split(' = ')
+
+				if (getValues[0].toUpperCase() == ndefsAttribute.toUpperCase() && getValues[0].toUpperCase().indexOf('P!') != 0){
+					getValues[1] = newVal
+				} else if (getValues[0].toUpperCase() == ndefsAttribute.toUpperCase() && getValues[0].toUpperCase().indexOf('P!') == 0){
+					getValues[0] = newVal
+				}
+
+				getValues = getValues.join(' = ')
+				readFile[x] = tabulation + getValues
+			}
+		}
+
+		if (debugMode == "debug") alert(dbAddr + lineBreak + lineBreak + readFile.join(lineBreak))
+
+		relatFile.create(readFile.join(lineBreak))
+	}
+
+
+
+	this.addAttribute = function(ndefsAttribute, newVal){
+		readOnlyError()
+		newNDEFS = new Array()
+		hasEntered = false
+		if (selectedSection == "") selectedSection = ndefsArray[0].NAME
+
+		if (!ndefsArray[selectedSection]) ndefsArray[selectedSection] = new Array()
+		ndefsArray[selectedSection][ndefsAttribute] = newVal
+
+
+		for (x = 0; x < readFile.length; x++){
+
+			newNDEFS.appendElement(readFile[x])
+
+			if (readFile[x].charAt(0) != tabulation){
+				currentSection = readFile[x].toUpperCase()
+
+				if (currentSection.toUpperCase() == selectedSection.toUpperCase()){
+					//alert(currentSection + lineBreak + lineBreak + selectedSection)
+					newNDEFS.appendElement(tabulation + ndefsAttribute + " = " + newVal)
+					//alert(newNDEFS.join(lineBreak))
+				}
+
+
+			}
+		}
+
+		readFile = newNDEFS
+		relatFile.create(readFile.join(lineBreak))
+	}
+
+	this.removeAttribute = function(ndefsAttribute){
+		readOnlyError()
+		newNDEFS = new Array()
+		if (selectedSection == "") selectedSection = ndefsArray[0].NAME
+
+		if (ndefsArray[selectedSection]) ndefsArray[selectedSection][ndefsAttribute] = undefined
+
+		for (x = 0; x < readFile.length; x++){
+			if (readFile[x].charAt(0) != tabulation){
+				currentSection = readFile[x].toUpperCase()
+				newNDEFS.appendElement(readFile[x])
+			} else {
+				if (currentSection.toUpperCase() == selectedSection.toUpperCase()){
+					getValues = readFile[x].deleteFirstChar()
+				
+					if (getValues.getSubstring(" = ").toUpperCase() != ndefsAttribute.toUpperCase()){
+						newNDEFS.appendElement(readFile[x])
+					}
+
+				} else newNDEFS.appendElement(readFile[x])
+			}
+		}
+
+		readFile = newNDEFS
+		relatFile.create(readFile.join(lineBreak))
+
+	}
+
+	this.removeSection = function(){
+		readOnlyError()
+		ndefsArray[selectedSection] = undefined
+		newNDEFS = new Array()
+
+		for (x = 0; x < readFile.length; x++){
+			if (readFile[x].charAt(0) != tabulation){
+				currentSection = readFile[x].toUpperCase()
+			}
+
+			if (currentSection.toUpperCase() != selectedSection.toUpperCase()){
+				newNDEFS.appendElement(readFile[x])
+			}
+		}
+		readFile = newNDEFS
+		relatFile.create(readFile.join(lineBreak))
+	}
+
+	this.addSection = function(newSection){
+		readOnlyError()
+
+		for (x = 0; x < readFile.length; x++){
+			if (readFile[x].toUpperCase() == newSection.toUpperCase()){
+				return false
+			}
+		}
+
+
+		ndefsArray[selectedSection] = new Array()
+		readFile.appendElement(newSection)
+		selectedSection = newSection
+		relatFile.create(readFile.join(lineBreak))
+	
+	}
+
+}

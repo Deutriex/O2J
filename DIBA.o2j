@@ -1,0 +1,101 @@
+// O2J dependences: fundamentals, files, DPLXML-parser
+
+var DIBA = new (function(){
+	var dibaDelay = 1000
+	var dibaLetter = "T"
+	var dibaMonitor
+	var appName
+	var dibaData
+	var dibaConf
+
+	this.getData = function(){
+		if (dibaData.exists()){
+			try {
+				getResult = eval(dibaData.passThru())
+
+				gotResult = new textfile(dibaLetter + ":\\" + appName + ".out")
+				gotResult.create(getResult)
+				gotResult.close()
+				
+			} catch (anError){
+				gotResult = new textfile(dibaLetter + ":\\" + appName + ".err")
+				if (anError.stack){
+					gotResult.create(anError.stack)
+				} else {
+					gotResult.create(anError.message)
+				}
+
+				gotResult.close()
+			}
+
+			dibaData.exclude()
+		}
+	}
+
+	this.receiveDataFrom = function(fromApplication){
+		gotResult = new textfile(dibaLetter + ":\\" + fromApplication + ".out")
+		gotResultErr = new textfile(dibaLetter + ":\\" + fromApplication + ".err")
+
+		while (!gotResult.exists() && !gotResultErr.exists()){}
+
+		gDataFX = ""
+		if (gotResult.exists()){
+			gDataFX = gotResult.passThru()
+			gotResult.exclude()
+		} else if (gotResultErr.exists()){
+			gDataFX = "The target application has reported an error\x0D\x0A"
+			gDataFX += gotResultErr.passThru()
+			gotResultErr.exclude()
+		}
+
+		return gDataFX
+	}
+
+	this.sendDataTo = function(toApplication, commands){
+		dibaDataDest = new textfile(dibaLetter + ":\\" + toApplication + ".in")
+		dibaDataDest.create(commands)
+		dibaDataDest.close()
+		
+	}
+
+	this.start = function(){
+
+		dibaUtil = new executable(O2J.getPath() + "/utilities/DIBAStart.bat")
+		if (dibaUtil.exists()){
+			dibaUtil.run(0)
+		} else {
+			try {
+				dibaUtil = new executable(program.getPath() + "/DIBAStart.bat")
+				dibaUtil.run(0)
+			} catch (imDiskNotInstalled){
+			}
+		}
+
+
+
+		dibaConf = new textfile(program.getPath() + "\\DIBASettings.dtx2")
+
+		if (dibaConf.exists()){
+			getDIBASettings = new DPLXMLobject(dibaConf.passThru())
+			appName = getDIBASettings.getAttribute("DIBA settings > Application name")
+
+			dibaData = new textfile(dibaLetter + ":\\" + appName + ".in")
+			dibaMonitor = setInterval("DIBA.getData()", dibaDelay)
+		}
+	}
+
+	this.isReady = function(){
+		getDIBADrive = new drive(dibaLetter)
+		if (getDIBADrive.isReady() && dibaConf.exists()){
+			return true
+		}
+
+		return false
+	}
+
+	this.stop = function(){
+		clearInterval(dibaMonitor)
+	}
+
+	this.start()
+})()

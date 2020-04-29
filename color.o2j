@@ -1,0 +1,51 @@
+function Color(){
+	if (arguments.length == 1){
+		regex = /#[0-9A-F]{6}/i
+		if (regex.test(arguments[0])){
+			redC = parseInt(arguments[0].substring(1,3), 16)
+			greenC = parseInt(arguments[0].substring(3,5), 16)
+			blueC = parseInt(arguments[0].substring(5,7), 16)
+			transp = 1
+		}
+	}
+
+	this.getRed = function(){
+		return redC;
+	}
+
+	this.getGreen = function(){
+		return greenC;
+	}
+	
+	this.getBlue = function(){
+		return blueC;
+	}
+
+	this.getTransparency = function(){
+		return transp;
+	}
+
+	this.setRed = function(newRed){
+		redC = newRed
+	}
+
+	this.setGreen = function(newGreen){
+		greenC = newGreen
+	}
+	
+	this.setBlue = function(newBlue){
+		blueC = newBlue
+	}
+
+	this.setTransparency = function(newTransp){
+		transp = newTransp
+	}
+
+	this.toString = function(){
+		if (this.getTransparency() == 1){
+			return "rgb(" + this.getRed() + ", " + this.getGreen() + ", " + this.getBlue() + ")"
+		} else {
+			return "rgba(" + this.getRed() + ", " + this.getGreen() + ", " + this.getBlue() + ", " + this.getTransparency() + ")"
+		}
+	}
+}

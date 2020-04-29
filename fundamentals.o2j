@@ -1,0 +1,947 @@
+function delimInt(LBound, UBound, step, isCircular){
+	var privInt
+	step = step || 1
+
+	if (LBound == undefined) LBound = Number.MIN_VALUE
+	if (UBound == undefined) UBound = Number.MAX_VALUE
+
+	privInt = LBound
+	isCircular = isCircular || false
+	dontThrowException = true
+
+	var ERROR_INCOMPATIBLE = "O2J data compatibility error: Incompatible data type"
+	var ERROR_INTCOMPTATIBLE_ONLY = "O2J data compatibility error: Floating-point numbers not allowed for delimInt variables"
+	var ERROR_OUT_OF_RANGE = "O2J data compatibility error: New value is out of range"
+	var ERROR_OUT_OF_SEQUENCE = "O2J data compatibility error: New value doesn't below to the sequence"
+
+	if (parseInt(step) != step)					throw new Error(ERROR_INCOMPATIBLE)
+	if (parseInt(LBound) != LBound && arguments.length > 0)		throw new Error(ERROR_INCOMPATIBLE)
+	if (parseInt(UBound) != UBound && arguments.length > 1)		throw new Error(ERROR_INCOMPATIBLE)
+
+
+
+	this.increase = function(multiply){
+		multiply = multiply || 1
+		privInt += step*multiply
+
+		if (privInt > UBound){
+			if (dontThrowException && !isCircular){
+				privInt = UBound
+			} else if (isCircular){
+				privInt = LBound + (privInt-LBound)%(UBound-LBound+1)
+			} else {
+				throw new Error(ERROR_OUT_OF_RANGE)
+			}
+		}
+	}
+
+	this.decrease = function(multiply){
+		multiply = multiply || 1
+		privInt -= step*multiply
+
+		if (privInt < LBound){
+			if (dontThrowException && !isCircular){
+				privInt = LBound
+			} else if (isCircular){
+				privInt = UBound - privInt%(UBound-LBound+1)
+			} else {
+				throw new Error(ERROR_OUT_OF_RANGE)
+			}
+		}
+	}
+
+
+
+	this.setValue = function(newValue){
+		if (isNaN(newValue))			throw new Error(ERROR_INTCOMPTATIBLE_ONLY)
+		if (parseInt(newValue) != newValue)	throw new Error(ERROR_INCOMPATIBLE)
+
+		isInteger = (newValue-LBound)/step
+
+
+		if (isInteger == parseInt(isInteger)){
+			if (newValue >= LBound && newValue <= UBound){
+				privInt = newValue
+			} else if (isCircular){
+				privInt = LBound + (newValue-LBound)%(UBound-LBound+1)
+			} else {
+				if (!dontThrowException){
+					throw new Error(ERROR_OUT_OF_RANGE)
+				}
+			}
+		} else {
+			throw new Error(ERROR_OUT_OF_SEQUENCE)
+		}
+	}
+
+	this.toArray = function(){
+	}
+
+	this.getValue = function(){return privInt}
+	this.setValueToMin = function(){privInt = LBound}
+	this.setValueToMax = function(){privInt = UBound}
+	this.getMinValue = function(){return LBound}
+	this.getMaxValue = function(){return UBound}
+	this.toString = function(){return privInt}
+}
+
+var loop = function(inObj, callbackFunction, loopOptions){
+	if (inObj.constructor === delimInt){
+		inObj.setValueToMin()
+		gotToEnd = false
+		
+		while (!gotToEnd){
+			
+			if (inObj.getValue() == inObj.getMaxValue()) gotToEnd = true
+
+			itObj = new (function(){
+				this.getValue = function(){return inObj.getValue()}
+			})()
+
+			if (itObj.getValue() !== undefined && itObj.getValue() !== null){
+				callbackFunction(itObj)
+			}
+
+			inObj.increase()
+		}
+
+
+	} else {
+		for (eachAtrrib in inObj){
+			if (inObj.hasOwnProperty(eachAtrrib)){
+				itObj = new (function(){
+					this.getName = function(){return eachAtrrib}
+					this.getValue = function(){return inObj[eachAtrrib]}
+				})()
+
+			
+				callbackFunction(itObj)
+			}
+		}
+	}
+}
+
+Object.prototype.getClass = function(){
+	return this
+}
+
+String.prototype.fullReplace = function(toBeReplaced, replaced){
+	return this.split(toBeReplaced).join(replaced)
+}
+
+String.prototype.appendToEach = function(findThis, appendIt){
+	return this.fullReplace(findThis, findThis + appendIt)
+}
+
+String.prototype.inside = function(between, andStr){
+	if (this.indexOf(between) != -1){
+		return this.split(between)[1].join(andStr)[0]
+	} else return ""
+}
+
+
+String.prototype.convertToSlashes = function(){
+	return this.fullReplace('/','\\').fullReplace('\\\\','\\')
+}
+
+String.prototype.convertToBar = function(){
+	return this.fullReplace('\\','/').fullReplace('//','/')
+}
+
+String.prototype.deleteLastChar = function(){
+	if (this.length > 0){
+		return this.substring(0, this.length-1)
+	}
+}
+
+String.prototype.matchLength = function(str){
+	return this.split(str).length-1
+}
+
+String.prototype.deleteFirstChar = function(){
+	if (this.length > 0){
+		return this.substring(1, this.length)
+	}
+}
+
+String.prototype.numericChars = function(){
+	numericChar = ""
+	for (gh = 0; gh < this.length; gh++){
+		if (!isNaN(this.charAt(gh))) numericChar += this.charAt(gh)
+	}
+
+	return numericChar
+}
+
+String.prototype.encode = function(){
+	thisString = this.split('')
+
+	for (hj = 0; hj < thisString.length; hj++){
+		ASCIICode = thisString[hj].charCodeAt(0)
+		toHex = ASCIICode.toString(16)
+
+		if (ASCIICode < 16) toHex = "0" + toHex
+		
+		thisString[hj] = "%" + toHex
+	}
+
+	return thisString.join('').toUpperCase()
+}
+
+String.prototype.decode = function(){
+	return unescape(this)
+}
+
+String.prototype.toBase64 = function(){
+	var base64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split("");
+	var s = this
+
+	// the result/encoded string, the padding string, and the pad count
+	var r = ""; 
+	var p = ""; 
+	var c = s.length % 3;
+ 
+	// add a right zero pad to make this string a multiple of 3 characters
+	if (c > 0) { 
+		for (; c < 3; c++) { 
+			p += '='; 
+			s += "\0"; 
+		} 
+	}
+ 
+	// increment over the length of the string, three characters at a time
+	for (c = 0; c < s.length; c += 3) {
+ 
+		// we add newlines after every 76 output characters, according to the MIME specs
+		if (c > 0 && (c / 3 * 4) % 76 == 0) { 
+			r += "\r\n"; 
+		}
+ 
+		// these three 8-bit (ASCII) characters become one 24-bit number
+		var n = (s.charCodeAt(c) << 16) + (s.charCodeAt(c+1) << 8) + s.charCodeAt(c+2);
+ 
+		// this 24-bit number gets separated into four 6-bit numbers
+		n = [(n >>> 18) & 63, (n >>> 12) & 63, (n >>> 6) & 63, n & 63];
+ 
+		// those four 6-bit numbers are used as indices into the base64 character list
+		r += base64chars[n[0]] + base64chars[n[1]] + base64chars[n[2]] + base64chars[n[3]];
+	}
+	 // add the actual padding string, after removing the zero pad
+	return r.substring(0, r.length - p.length) + p;
+}
+
+String.prototype.fromBase64 = function(){
+	var base64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split("");
+	var s = this
+
+	var base64inv = {}; 
+	for (var i = 0; i < base64chars.length; i++){ 
+		base64inv[base64chars[i]] = i; 
+	}
+
+	// remove/ignore any characters not in the base64 characters list
+	//	or the pad character -- particularly newlines
+	s = s.replace(new RegExp('[^'+base64chars.join("")+'=]', 'g'), "");
+ 
+	// replace any incoming padding with a zero pad (the 'A' character is zero)
+	var p = (s.charAt(s.length-1) == '=' ? 
+					(s.charAt(s.length-2) == '=' ? 'AA' : 'A') : ""); 
+	var r = ""; 
+	s = s.substr(0, s.length - p.length) + p;
+ 
+	// increment over the length of this encrypted string, four characters at a time
+	for (var c = 0; c < s.length; c += 4) {
+ 
+		// each of these four characters represents a 6-bit index in the base64 characters list
+		//	which, when concatenated, will give the 24-bit number for the original 3 characters
+		var n = (base64inv[s.charAt(c)] << 18) + (base64inv[s.charAt(c+1)] << 12) +
+						(base64inv[s.charAt(c+2)] << 6) + base64inv[s.charAt(c+3)];
+ 
+		// split the 24-bit number into the original three 8-bit (ASCII) characters
+		r += String.fromCharCode((n >>> 16) & 255, (n >>> 8) & 255, n & 255);
+	}
+	 // remove any zero pad that was added to make this a multiple of 24 bits
+	return r.substring(0, r.length - p.length);
+}
+
+
+function List(maxSize, delimType){
+	var firstIndex
+	var lastIndex
+	var privList = new Array()
+
+	this.add = function(someThing){
+	}
+
+	this.remove = function(){
+	}
+}
+
+function queque(maxSize, delimType){
+	var LBound = -1
+	var UBound = -1
+	var privQueque = new Array()
+
+
+	this.isEmpty = function(){
+		if (privQueque.length == 0) return true
+		return false
+	}
+
+	this.enqueque = function(someThing){
+
+		privQueque.push(someThing)
+		if (LBound == -1) LBound = 0
+		UBound = privQueque.length-1
+	}
+
+	this.dequeque = function(){
+		if (LBound != -1){
+			dequequed = privQueque[LBound]
+
+			if (privQueque.length != 0){
+				LBound++
+			} else {
+				LBound = -1
+				UBound = -1
+			}
+
+			return dequequed
+		}
+	}
+}
+
+function stack(maxSize, delimType){
+	var top
+	var privStack = new Array()
+
+	this.push = function(someThing){
+		if (delimType === undefined || (delimType !== undefined && privStack.length < maxSize)){
+			privStack.push(someThing)
+		}
+	}
+
+	this.pop = function(){
+		if (privStack.length != 0){
+			return privStack.pop(someThing)
+		}
+	}
+}
+
+Array.prototype.annihilate = function(idx){
+	this.splice(idx, 1)
+	return this
+}
+
+Array.prototype.annihilateAll = function(){
+	this.splice(0, this.length)
+	return this
+}
+
+
+Array.prototype.copy = function(anotherArray){
+
+	this.annihilateAll()
+
+	loop(anotherArray, function(itObjFGH){
+		this[itObjFGH.getName()] = itObjFGH.getValue()
+	})
+
+	return this
+}
+
+Array.prototype.appendElement = function(elem){
+	this.push(elem)
+}
+
+Array.prototype.searchQuery = function(strQuery, delim){
+	if (!delim) delim = ": "
+	for (iop = 0; iop < this.length; iop++){
+		if (this[iop].getSubstring(delim) == strQuery){
+			return this[iop].getSubstring(delim,1)
+		}
+	}
+
+	return undefined
+}
+
+Array.prototype.multiplyBy = function(realValue){
+	for (iqwe = 0; iqwe < this.length; iqwe++){
+		this[iqwe] *= realValue
+	}
+}
+
+Array.prototype.exchange = function(idx1, idx2){
+	tmp = this[idx1]
+	this[idx1] = this[idx2]
+	this[idx2] = tmp
+}
+
+Array.prototype.downcast = function(methAttrib){
+	arrayBackup = [].copy(this)
+
+	loop(this, function(itObjASX){
+		try {
+			if (typeof this[ghj][methAttrib] == "function"){
+				this[itObjASX.getName()] = this[itObjASX.getName()][methAttrib]()
+			} else {
+				this[itObjASX.getName()] = this[itObjASX.getName()][methAttrib]
+			}
+
+		} catch (exp){
+			this.copy(arrayBackup)
+			return false
+		}
+	})
+
+	return true
+}
+
+Array.prototype.resultOf = function(functionName){
+	for (dsa = 0; dsa < this.length; dsa++){	
+		eval("this["+dsa+"] = " + functionName + "('" + this[dsa] + "')")
+	}
+
+	return this
+}
+
+Array.prototype.indexOf = function(elem){
+	for (zxc = 0; zxc < this.length; zxc++){
+		if (this[zxc] === elem) return zxc
+	}
+
+	return -1
+}
+
+Array.prototype.match = function(regexStr, wholeExpression){
+	matches = new Array()
+	notString = false
+
+	if (!(regexStr instanceof RegExp)){
+		return null
+	}
+
+	for (sdf = 0; sdf < this.length && !notString; sdf++){
+		isAMatch = new String(this[sdf]).match(regexStr)
+
+		if (isAMatch){
+			if (!wholeExpression){
+				matches.push(isAMatch)
+			} else {
+				matches.push(this[sdf])
+			}
+		}
+	}
+
+
+	if (matches.length != 0){
+		return matches
+	} else {
+		return null
+	}
+}
+
+Array.prototype.untree = function(){
+	var unpacked = new Array()
+	var inQueque = new queque()
+	var currentNode = this
+
+	do {
+
+		for (vbn = 0; vbn < currentNode.length; vbn++){
+			if (currentNode[vbn] instanceof Array){
+				inQueque.enqueque(currentNode[vbn])
+			} else {
+				unpacked.push(currentNode[vbn])
+			}
+		}
+
+
+		currentNode = inQueque.dequeque()
+	} while (!inQueque.isEmpty() && currentNode !== undefined)	
+
+
+	return unpacked
+}
+
+Array.prototype.getEnumerationTemplates = function(){
+	notString = false
+	basicSchemes = []
+	digitRegex = /\d+/g
+
+	for (ghj = 0; ghj < this.length && !notString; ghj++){
+		if (typeof this[ghj] == "string"){
+			string2regex = ""
+			startMatch = -1
+
+			function detectDigitsRegex(){
+				if (startMatch != -1){
+					string2regex += "[0-9]+"
+					//alert(escape(string2regex))
+					startMatch = -1
+				}
+
+			}
+
+			for (ghj2 = 0; ghj2 < this[ghj].length; ghj2++){
+				if (!isNaN(this[ghj].charAt(ghj2)) && this[ghj].charAt(ghj2).trim() != ""){
+
+					if (startMatch == -1){
+						startMatch = ghj2
+					}
+
+				} else {
+					detectDigitsRegex()
+					string2regex += this[ghj].charAt(ghj2)
+
+				}
+			}
+
+			detectDigitsRegex()
+
+			if (basicSchemes.indexOf(string2regex) == -1){
+				basicSchemes.push(string2regex)
+			}
+
+
+		} else {
+			notString = true
+		}
+	}
+
+
+	if (notString) return null
+
+	basicSchemes.sort()
+	basicSchemes.resultOf("new RegExp")
+	return basicSchemes
+}
+
+Array.prototype.naturalSort = function(){
+	basicSchemes = this.getEnumerationTemplates()
+	solvedSortings = new Array()
+
+	for (jkl = 0; jkl < basicSchemes.length; jkl++){
+
+		numericScheme = this.match(basicSchemes[jkl])
+
+		if (!numericScheme) return null
+		numericScheme = numericScheme.match(/\d+/g)
+		if (!numericScheme) return null
+
+
+		numericScheme.sort(function(a,b){
+			for (i = 0; i < a.length; i++){
+				if (parseInt(a[i]) > parseInt(b[i])) return 1
+				if (parseInt(a[i]) < parseInt(b[i])) return -1
+			}
+			return 0
+		})
+
+
+		for (xyz = 0; xyz < numericScheme.length; xyz++){
+			composed = basicSchemes[jkl].source
+
+			for (abc = 0; abc < numericScheme[xyz].length; abc++){
+				composed = composed.replace("[0-9]+",numericScheme[xyz][abc])
+
+			}
+			
+			solvedSortings.push(composed)
+		}
+				
+	}
+
+	this.copy(solvedSortings) 
+	return this
+}
+
+Array.prototype.naturalEnumeration = function(char1, char2){
+	newStr = ""
+	
+	for (fgh = 0; fgh < this.length; fgh++){
+		if (fgh < this.length-2) newStr += this[fgh] + char1
+		else if (fgh == this.length-2) newStr += this[fgh] + char2
+		else newStr += this[fgh]
+	}
+
+	return newStr
+}
+
+Array.prototype.getSum = function(){
+	getIt2 = 0;
+	for (ary58 = 0; ary58 < this.length; ary58++){
+		getIt2 += this[ary58]
+	}
+	return getIt2;
+}
+
+Array.prototype.getSumOfPositiveElements = function(){
+	getIt = 0;
+	for (ary57 = 0; ary57 < this.length; ary57++){
+		if (this[ary57] > 0) getIt += this[ary57]
+	}
+	return getIt;
+}
+
+Array.prototype.insert = function(getIdx, getObj){
+	for (gIt57 = this.length-1; gIt57 >= getIdx; gIt57--){
+		this[gIt57+1] = this[gIt57]
+	}
+
+	this[getIdx] = getObj
+}
+
+var program = {
+	getPath: function(){
+		home = unescape(location.href).fullReplace('file:///','').fullReplace('/','\\')
+		home = home.substring(0, home.lastIndexOf('\\'))
+		return home
+	},
+
+	getTitle: function(){
+		return document.title
+	},
+
+	setTitle: function(newTitle){
+		document.title = newTitle
+	},
+
+	arguments: function(){
+		var query_string = {};
+		var query = window.location.search.substring(1)
+		var vars = query.split("&")
+		for (var i=0;i<vars.length;i++) {
+			var pair = []
+			pair[0] = vars[i].substring(0, vars[i].indexOf("="))
+			pair[1] = vars[i].substring(vars[i].indexOf("=")+1, vars[i].length)
+			
+			// If first entry with this name
+			if (typeof query_string[pair[0]] === "undefined") {
+				query_string[pair[0]] = decodeURIComponent(pair[1]);
+				
+			// If second entry with this name
+			} else if (typeof query_string[pair[0]] === "string") {
+				var arr = [ query_string[pair[0]],decodeURIComponent(pair[1]) ]
+				query_string[pair[0]] = arr;
+			// If third or later entry with this name
+			} else {
+				query_string[pair[0]].push(decodeURIComponent(pair[1]))
+			}
+			
+			query_string[i] = query_string[pair[0]]
+		} 
+		
+		return query_string	
+	}
+}
+
+var O2J = {
+	getPath: function(){
+		return program.getPath() + "\\..\\O2J"
+	},
+
+	getVersion: function(){
+		return "0.3"
+	},
+
+	getMode: function(){
+		getExt = program.getPath()
+		getExt = getExt.substring(getExt.lastIndexOf('.')+1, getExt.length).toUpperCase()
+
+		if (getExt == "HTA"){
+			var ie = 12;
+			try { ie = parseInt(navigator.userAgent.match( /(MSIE |Trident.*rv[ :])([0-9]+)/ )[ 2 ], 10); }
+			catch(e){}
+			
+			if (ie <= 8) return 0
+			else return ie-8
+		} else {
+			return 4
+		}
+	}
+}
+
+
+var home = program.getPath()
+var ghome = home.substring(0, home.lastIndexOf('\\'))
+
+
+var lineBreak = unescape("%0D%0A")
+var tabulation = unescape("%09")
+var space = " "
+var testDrives = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+String.prototype.trim = function(){
+	str = this
+	nStr = ""
+	isLk = true
+	blankChars = " " + unescape("%09") + unescape("%0D") + unescape("%0A")
+
+	for (xyh = 0; xyh < str.length; xyh++){
+
+		if (blankChars.indexOf(str.charAt(xyh)) == -1) isLk = false
+		if (!isLk) nStr += str.charAt(xyh)
+
+	}
+
+	nStr2 = ""
+	isLk = true
+
+
+	for (xyh = nStr.length-1; xyh >=0 ; xyh--){
+
+		if (blankChars.indexOf(nStr.charAt(xyh)) == -1) isLk = false
+		if (!isLk) nStr2 = nStr.charAt(xyh) + nStr2 
+
+	}
+
+
+	return nStr2
+}
+
+String.prototype.removeWWW = function(){
+	return this.fullReplace('://www','://')
+}
+
+String.prototype.urlEncode = function(){
+	return escape(this.fullReplace(' ','+'))
+}
+
+String.prototype.fixLineBreak = function(){
+	quebraLinhaProblematica = this.fullReplace(unescape("%0A"),unescape("%0D%0A")).fullReplace(unescape("%0D%0D%0A"),unescape("%0D%0A"))
+	quebraLinhaProblematica = quebraLinhaProblematica.fullReplace(unescape("%0D"),unescape("%0D%0A")).fullReplace(unescape("%0D%0A%0A"),unescape("%0D%0A"))
+
+	return quebraLinhaProblematica
+}
+
+String.prototype.getSubstring = function(spt, idx){
+	splitted = this.split(spt)
+	if (!idx) idx = 0
+	
+	if (new String(idx).indexOf('last') != -1){
+		idx = eval(idx.replace('last',splitted.length-1))
+	}
+
+	return splitted[idx]
+}
+
+String.prototype.repeat = function(T1m35){
+	this2 = ""
+	for (T1m352 = 0; T1m352 < T1m35; T1m352++) this2 += this
+	return this2
+}
+
+function AbstractClass(c){
+	if(c.prototype.isPrototypeOf(this)){
+		throw new Error('Abstract Class')
+	}
+}
+
+
+function delimFloat(LBound, UBound, precision){
+	var privFloat
+	
+}
+
+function finalObject(finalObj_p){
+	this.isDefined = function(){
+		if (finalObj_p === undefined) return false
+		return true
+	}
+
+	this.set = function(onceObj){
+		if (!this.isDefined()){
+			finalObj_p = onceObj
+		} else {
+			throw new Error("O2J object is final")
+		}
+	}
+
+	this.get = function(){
+		return finalObj_p
+	}
+
+	this.toString = function(){
+		if (!this.isDefined()){
+			return "[O2J finalObject (undefined)]"
+		} else {
+			return finalObj_p.toString()
+		}
+	}
+}
+
+
+var elWithNoExtension = 0
+var elWithExtension = 1
+var elYes = 6
+var elNo = 7
+
+
+
+function constrainedData(getRegex){
+	var value_p = ""
+	var thisClass = this;
+	var additionalConstraint;
+
+	this.addAdditionalValidation = function(callbackFunction){
+		additionalConstraint = callbackFunction()
+	}
+
+	var extraValidation = function(){
+		if (additionalConstraint === undefined) return true;
+		else return additionalConstraint();
+	}
+
+	this.getValue = function(){
+		return value_p;
+	}
+
+	this.setValue = function(newValue){
+		if (getRegex.test(newValue) && extraValidation()){
+			value_p = newValue
+		} else {
+			throw new Error("O2J data incompatibility - The data is incompatible with the given constraint(s)");
+		}
+	}
+
+	this.createDerivate = function(derivateName, extraValidation){
+		window[derivateName] = eval(this.getClass())
+
+	}
+}
+
+function dump(arr, outMode, level) {
+	var dumped_text = "";
+	if(!level) level = 0;
+	if (!outMode) outMode = false
+	
+	//The padding given at the beginning of the line.
+	var level_padding = "";
+	for(var j=0;j<level;j++) level_padding += "\t";
+	
+	
+	if(typeof(arr) == 'object') { //Array/Hashes/Objects 
+		for(var item in arr) {
+			if (((outMode === false || outMode === "DPLXML") && arr.hasOwnProperty(item)) || outMode === true){ // && isNaN(item)
+				var value = arr[item];
+				
+				if(typeof(value) == 'object') { //If it is an array,
+					
+					itemStr = item + "\n"
+					if (outMode !== "DPLXML"){
+						itemStr = "'" + item + "' ...\n"
+					}
+				
+					dumped_text += level_padding + itemStr
+					dumped_text += dump(value, outMode, level+1);
+				} else {
+					itemStr = item + ": " + value + "\n"
+					if (outMode !== "DPLXML"){
+						itemStr = "'" + item + "' => \"" + value + "\"\n"
+					}
+					
+					dumped_text += level_padding + itemStr;
+				}
+			}
+		}
+	} else { //Stings/Chars/Numbers etc.
+		dumped_text = "===>"+arr+"<===("+typeof(arr)+")";
+	}
+	return dumped_text;
+}
+
+Number.prototype.between = function(lth, hth){
+	return this >= lth && this <= hth
+}
+
+Number.prototype.included = function(){
+	var t
+	for (t = 0; t < arguments.length; t++){
+		if (arguments[t] == this) return true
+	}
+
+	return false
+}
+
+String.prototype.included = function(){
+	var t
+	for (t = 0; t < arguments.length; t++){
+		if (arguments[t] == this) return true
+	}
+
+	return false
+}
+
+Array.prototype.evalAnd = function(){
+	for (eachElem in this){
+		if (this.hasOwnProperty(eachElem)){
+			if (this[eachElem] === false) return false
+		}
+	}
+	
+	return true
+}
+
+Array.prototype.evalOr = function(){
+	for (eachElem in this){
+		if (this.hasOwnProperty(eachElem)){
+			if (this[eachElem] === true) return true
+		}
+	}
+	
+	return false
+}
+
+String.prototype.pad = function(newLength){
+	res = this
+
+	if (res.length < newLength){
+		while (res.length < newLength){
+			res += " "
+		}
+	} else {
+		res = res.substring(0, newLength)
+	}
+
+	return res
+}
+
+Number.prototype.pad = function(newLength){
+	res = ""
+	delta = newLength - this.toString().length
+
+	for (i = 0; i < delta; i++){
+		res += "0"
+	}
+
+	res += this
+
+	return res
+}
+
+Array.prototype.getLength = function(){
+	htxs = 0
+	for (arrayElem in this){
+		if (this.hasOwnProperty(arrayElem)){
+			htxs++
+		}
+	}
+	
+	return htxs
+}
+
+Array.prototype.getNameAt = function(idx){
+	htxr = 0
+	for (arrayElem in this){
+		if (this.hasOwnProperty(arrayElem)){
+			if (idx == htxr){
+				return arrayElem
+			}
+			htxr++
+		}
+	}
+	
+	return undefined
+}

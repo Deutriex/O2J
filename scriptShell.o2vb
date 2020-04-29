@@ -1,0 +1,13 @@
+Set WshShell = CreateObject("WScript.Shell")
+
+Function SetCurrentDirectory(directory)
+	 WshShell.CurrentDirectory = directory
+End Function
+
+Function ExecAndWait(filePath)
+	ExecAndWait = WshShell.Run(filePath, 0, true)
+End Function
+
+Function GetEnvironmentStrings(environVar)
+	GetEnvironmentStrings = WshShell.ExpandEnvironmentStrings(environVar)
+End Function

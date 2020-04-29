@@ -1,0 +1,32 @@
+<style>
+	.selected TD {background: #FF8000}
+	.selected TD INPUT {color: white}
+</style>
+
+<script src="../fundamentals.o2j"></script>
+<script src="../guienhancements.o2j"></script>
+
+
+<style>
+	#LTA_container {border: 1px solid #CCCCCC; background: #EEEEEE; height: 300px; width: 500px; overflow: auto; cursor: text}
+	#LTA_container INPUT {border: 0px solid #000000; background: transparent; resize: horizontal; width: auto; font-family: Lucida console}
+	
+</style>
+
+<div id=LTA_container>
+<table id=LTA cellspacing=0 cellpadding=0 width=100%>
+<tr><td><input size=10></td></tr>
+</table>
+</div>
+
+
+<script>
+	newLTA = new linedTextArea(document.getElementById('LTA'), "selected")
+	testString = "This is an test".fullReplace(' ', lineBreak)
+	newLTA.setValue(testString)
+
+
+	newLTA.selectLine(3)
+
+
+</script>

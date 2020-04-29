@@ -1,0 +1,1 @@
+O2JToJavaScriptCompiler.hta sample.txt output.hta

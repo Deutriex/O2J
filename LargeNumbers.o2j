@@ -1,0 +1,248 @@
+	function GREATSum(num1, num2){
+
+		num1 = new String(num1)
+		num2 = new String(num2)
+		num3 = new Array()
+
+		if (parseInt(num1.length) > parseInt(num2.length)){
+
+			op = parseInt(num1.length)-parseInt(num2.length)
+			for (a = 0; a < op; a++){
+				num2 = "0" + num2
+			}
+
+		} else if (parseInt(num2.length) > parseInt(num1.length)){
+
+			op = parseInt(num2.length)-parseInt(num1.length)
+			for (a = 0; a < op; a++){
+				num1 = "0" + num1
+			}			
+		}
+
+		num1 = num1.split('')
+		num2 = num2.split('')
+
+		for (x = 0; x < num1.length; x++){
+			num3[x] = parseInt(num1[x]) + parseInt(num2[x])
+		}
+
+		for (x = num1.length-1; x >=1; x--){
+
+			if (parseInt(num3[x]) > 9){
+				num3[x] = parseInt(num3[x]) - 10
+				num3[x-1] = parseInt(num3[x-1]) + 1
+			}
+		}
+
+		return num3.join('')
+
+	}
+
+	function GREATDiff(num1, num2){
+
+		num1 = new String(num1)
+		num2 = new String(num2)
+		num3 = new Array()
+
+		if (parseInt(num1.length) > parseInt(num2.length)){
+
+			op = parseInt(num1.length)-parseInt(num2.length)
+			for (a = 0; a < op; a++){
+				num2 = "0" + num2
+			}
+
+		}
+
+		num1 = num1.split('')
+		num2 = num2.split('')
+
+		for (x = 0; x < num1.length; x++){
+			num3[x] = parseInt(num1[x]) - parseInt(num2[x])
+		}
+
+		for (y = 1; y < num1.length; y++){
+
+			for (x = 1; x < num1.length; x++){
+
+				if (parseInt(num3[x]) < 0){
+					num3[x] = parseInt(num3[x]) + 10
+					num3[x-1] = parseInt(num3[x-1]) - 1
+				}
+			}
+		}
+
+
+		return num3.join('')
+
+	}
+
+	function GREATMultiply(num1, num2){
+		num1 = new String(num1).split('')
+		num2 = new String(num2).split('')
+		num4 = new Array()
+		num5 = new String("0")
+				
+		_a = 0
+		for (a = num2.length-1; a >= 0; a--){
+			num3 = new Array()
+
+			for (b = num1.length-1; b >= 0 ; b--){
+				num3[b] = parseInt(num1[b])*parseInt(num2[a])
+			}
+
+			for (b = 0; b < _a; b++){
+				num3[num3.length] = 0
+			}
+
+
+			for (b = num3.length-1; b >= 1; b--){
+				if (parseInt(num3[b]) > 9){
+					baseNMove = Math.floor(parseInt(num3[b])/10)
+
+					num3[b] = parseInt(num3[b]) - parseInt(10*baseNMove)
+					num3[b-1] = parseInt(num3[b-1]) + baseNMove
+				}
+			}
+
+			_a++
+
+			num4[num4.length] = new String(num3.join(''))
+
+		}
+
+		for (f = 0; f < num4.length; f++){
+			num5 = GREATSum(num5,num4[f])
+		}
+
+		return num5
+	}
+
+	function GREATPower(num1, num2){
+		num1 = new String(num1)
+		num2 = parseInt(num2)
+		num3 = num1
+
+		for (v = 0; v < num2-1; v++){
+			num3 = GREATMultiply(num3,num1)
+			
+		}
+
+		if (num2 == 0) num3 = 1
+
+
+		return num3
+
+	}
+
+	function GREATComp(num11, num21){
+		num11 = new String(num11)
+		num21 = new String(num21)
+		num31 = 0
+
+		if (parseInt(num11.length) > parseInt(num21.length)){
+
+			op = parseInt(num11.length)-parseInt(num21.length)
+			for (a = 0; a < op; a++){
+				num21 = "0" + num21
+			}
+
+		} else if (parseInt(num21.length) > parseInt(num11.length)){
+
+			op = parseInt(num21.length)-parseInt(num11.length)
+			for (a = 0; a < op; a++){
+				num11 = "0" + num11
+			}			
+		}
+
+		num11 = num11.split('')
+		num21 = num21.split('')
+
+		for (e = 0; e < num11.length; e++){
+			if (parseInt(num11[e]) > parseInt(num21[e])){
+				num31 = 0
+				break
+			} else if (parseInt(num21[e]) > parseInt(num11[e])){
+				num31 = 1
+				break
+			}
+		}
+
+
+
+		return num31
+
+	}
+
+	function GREATDiv(num10, num20){
+		num10 = new String(num10)
+		num20 = new String(num20)
+		num30 = ""
+		num40 = new String(num10)
+
+		while (GREATComp(num20,num40) == 1){
+
+			num50 = num40.substring(0,num20.length)
+
+			if (parseInt(num50) < parseInt(num20)){
+				num50 += num40.charAt(num20.length)
+			}
+
+			xQuoc:
+			for (tv = 0; tv < 10; tv++){
+				mQuoc = GREATMultiply(num20,tv)
+				quoc = tv
+
+				if (parseInt(GREATComp(GREATDiff(num50,mQuoc),num20)) == 1) break xQuoc
+
+			}
+
+
+			diffFact = GREATMultiply(quoc,parseInt(num20))
+			deltaM = parseInt(num40.length) - parseInt(diffFact.length)
+
+			diffFact = GREATMultiply(diffFact,GREATPower(10,deltaM))
+
+			num40 = zeroTrim(GREATDiff(num40,diffFact))
+			if (num40 == "") num40 = "0"
+
+			num30 = num30 + quoc
+		
+		}
+
+		if (num30.length) num30 = "1"
+
+		return new Array(num30,num40)
+
+	}
+
+	function NUMBERCRYPT(informat){
+		charcode = file_passThru(home + "\\charcode.dtx","ndefs")
+		getPassword = informat.split('')
+		getPassword2 = new Array()
+		chipher = new String(0)
+
+		for (v = informat.length-1; v >= 0; v--){
+			getPassword2[v] = charcode['Code'][""+getPassword[v]+""]
+		}
+
+		_v = 0
+		for (v = informat.length-1; v >= 0; v--){
+
+			_256multiply = new String(1)
+
+			for (w = 0; w < v; w++){
+				_256multiply = GREATMultiply(_256multiply,256)
+			}
+
+			getPassword2[_v] = GREATMultiply(getPassword2[_v],_256multiply)
+
+			_v++			
+		}
+
+		for (z = 0; z < getPassword2.length; z++){
+			chipher = GREATSum(chipher,getPassword2[z])
+		}
+
+		return chipher
+		
+	}

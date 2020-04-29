@@ -1,0 +1,104 @@
+var system = new (function(){
+	var winShell = new ActiveXObject("WScript.Shell")
+	var shellApp = new ActiveXObject("shell.application")
+	var winNetwork = new ActiveXObject("WScript.Network");
+
+	this.getRAMSize = function(){
+		return shellApp.GetSystemInformation("PhysicalMemoryInstalled")
+	}
+
+	this.getComputerName = function(){
+		return winNetwork.ComputerName
+	}
+
+	this.user = {
+		getDomain: function(){
+			return winNetwork.UserDomain
+		},
+
+		getName: function(){
+			return winNetwork.UserName
+		},
+
+		isAdmin: function(){
+			var strAdmin = "\\\\" + system.getComputerName() + "\\Admin$\\System32"
+			var FSO = new ActiveXObject("Scripting.FileSystemObject")
+
+			if (FSO.FolderExists(strAdmin)) return true
+			return false
+		}
+	}
+
+	this.processor = {
+		getName: function(){
+			return winShell.regread("HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0\\ProcessorNameString")
+		},
+
+		getSpeed: function(){
+			return shellApp.GetSystemInformation("ProcessorSpeed")
+		},
+
+		getIdentifier: function(){
+			return winShell.ExpandEnvironmentStrings("%PROCESSOR_IDENTIFIER%")
+		},
+
+		getArchitecture: function(){
+			return winShell.ExpandEnvironmentStrings("%PROCESSOR_ARCHITECTURE%")
+		},
+
+		getRevision: function(){
+			return winShell.ExpandEnvironmentStrings("%PROCESSOR_REVISION%")
+		},
+
+		getLength: function(){
+			return winShell.ExpandEnvironmentStrings("%NUMBER_OF_PROCESSORS%")
+		}
+	}
+
+})()
+
+if (O2J.getMode() <= 1){
+	program.arguments = function(){
+		htaApp = document.getElementsByTagName('Application')
+		argv = new Array()
+
+		if (htaApp.length){
+			cmdLine = htaApp[0].commandLine.trim()
+			argv = cmdLine.split(' ')
+
+			quoteInicio = -1
+
+			for (ghj = 0; ghj < argv.length; ghj++){
+				primeiroChar = argv[ghj].charAt(0)
+				ultimoChar = argv[ghj].charAt(argv[ghj].length-1)
+
+				function annihilateThis(){
+					argv.annihilate(ghj)
+					ghj--
+				}
+
+
+				if (primeiroChar == "\"" && primeiroChar != ultimoChar){
+					quoteInicio = ghj
+				}
+
+				if (quoteInicio != -1 && ghj > quoteInicio){
+					argv[quoteInicio] += " " + argv[ghj]
+					annihilateThis()
+				}
+
+				if (ultimoChar == "\"" && primeiroChar != ultimoChar){
+					quoteInicio = -1
+				}
+
+				argv[ghj] = argv[ghj].fullReplace("\"","")
+
+				if (!argv[ghj]) annihilateThis()
+
+			}
+
+		}
+
+		return argv
+	}
+}

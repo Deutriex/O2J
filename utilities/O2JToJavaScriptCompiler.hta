@@ -1,0 +1,61 @@
+<html>
+<head>
+
+<script src="../fundamentals.o2j"></script>
+<script src="../files.o2j"></script>
+
+<hta:application
+	applicationName = "O2JToJSCompiler"
+	singleInstance = "Yes"
+>
+
+</head>
+<body>
+
+<script>
+	if (program.arguments().length == 3){
+		codigoFonte = new textfile(program.arguments()[1])
+		saida = new textfile(program.arguments()[2])
+
+		codigoCompilado = new Array()
+		codigoCompilado.push("document.write('<html>')")
+		codigoCompilado.push("document.write('<head>')")
+
+		codigoCompilado.push("document.write('<hta:application')")
+		codigoCompilado.push("document.write('>')")
+	
+		mainLibrary = new textfile(home + "\\..\\fundamentals.o2j")
+		codigoCompilado.push(mainLibrary.passThru())
+
+		codigoCompilado.push("document.write('</head>')")
+		codigoCompilado.push("document.write('<body>')")
+
+		for (readedLine = codigoFonte.readLine(); readedLine; readedLine = codigoFonte.readLine()){
+			analyzeLine = readedLine.split(' ')
+			interpretated = ""
+
+			if (analyzeLine[0] == "int"){
+				interpretated = analyzeLine[1] + " = new delimInt()"
+			}
+
+			codigoCompilado.push(interpretated)
+
+		}
+		
+
+		codigoCompilado.push("document.write('</body>')")
+		codigoCompilado.push("document.write('</html>')")
+
+
+
+		saida.create("<scr" + "ipt>eval(unescape(\"" + codigoCompilado.join(lineBreak).encode() + "\"))</scr" + "ipt>")
+	}
+
+
+	window.close()
+
+</script>
+
+
+</body>
+</html>

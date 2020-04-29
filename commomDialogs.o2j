@@ -1,0 +1,14 @@
+var o2jCommomDialogs = new (function(){
+
+	var commomDialog = new ActiveXObject("shell.application")
+	//alert(commomDialog.GetSystemInformation("ProcessorSpeed"))
+
+	commomDialog.BrowseForFolder(0, "Example", 0, 36)
+
+
+	this.openFile = function(){
+		//commomDialog.ShowOpen()
+	}
+
+
+})()

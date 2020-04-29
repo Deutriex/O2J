@@ -1,0 +1,190 @@
+function distance(varDistance){
+	var distanceSI = 0
+}
+
+function area(varArea){
+	var areaSI = 0
+}
+
+function volume(varVolume){
+	var volumeSI = 0
+}
+
+function weight(varWeight){
+	var weightSI = 0
+	var kg2Pounds = 2.204622621848776
+	var kg2Stones = 0.1574730444177697
+	var kg2Tons = 0.001
+	var kg2g = 1000
+
+	this.inPounds = function(){
+		return weightSI*kg2Pounds + " lb"
+	}
+
+	this.inStones = function(){
+		return weightSI*kg2Stones + " st"
+	}
+
+	this.inTons = function(){
+		return weightSI*kg2tons + " T"
+	}
+
+
+	this.inGrams = function(){
+		return weightSI*kg2g + " g"
+	}
+
+	this.setValue = function(newValue){
+		if (!isNaN(newValue)){
+			if (newValue > 0){
+				weightSI = newValue
+			} else {
+				throw new Error("O2J data compatibility error: New weight is inconsistent")
+			}
+		} else {
+			testExpression = /[0-9]+\x20[a-zA-Z]{1,3}/
+
+			if (testExpression.test(newValue)){
+				splitValues = newValue.split(' ')
+				
+				switch (splitValues[1]){
+					case "kg":
+						weightSI = splitValues[0]
+						break
+					case "g":
+						weightSI = splitValues[0]/kg2g
+						break
+					case "lb":
+						weightSI = splitValues[0]/kg2Pounds
+						break
+					case "st":
+						weightSI = splitValues[0]/kg2Stones
+						break
+					case "T":
+						weightSI = splitValues[0]/kg2Tons
+						break
+					default:
+						throw new Error("O2J data compatibility error: Unknow weight unit")
+				}
+					
+					
+
+
+			} else {
+				throw new Error("O2J data compatibility error: Invalid parameter")
+			}
+		}
+	}
+
+	this.toString = function(){
+		return weightSI + " kg"
+	}
+
+	if (varWeight) this.setValue(varWeight)
+}
+
+function time(varTime){
+	var timeSI = 0
+}
+
+function electriccurent(varAmp){
+	var ampSI = 0
+}
+
+function temperature(varTemp){
+	var temperatureSI = 0
+
+	convertToKelvin = function(newValue){
+		if (!isNaN(newValue)){
+			return newValue
+		} else {
+			testExpression = /[0-9]+\x20[A-Z°]{1,2}/
+
+			if (testExpression.test(newValue)){
+				splitValues = newValue.split(' ')
+
+				switch (splitValues[1]){
+					case "K":
+						return parseFloat(splitValues[0])
+						break
+					case "°F":
+						return parseFloat(273.15) + (parseFloat(splitValues[0])-32)/1.8
+						break
+					case "°C":
+						return parseFloat(splitValues[0]) + parseFloat(273.15)
+						break
+					default:
+						throw new Error("O2J data compatibility error: Unknown temperature unit")
+						return undefined
+					
+				}
+
+
+			} else {
+				throw new Error("O2J data compatibility error: Invalid parameter")
+				return undefined
+			}
+		}
+	}
+
+	convertToKelvinInt = function(newValue){
+		if (!isNaN(newValue)){
+			return newValue
+		} else {
+			testExpression = /[0-9]+\x20[A-Z°]{1,2}/
+
+			if (testExpression.test(newValue)){
+				splitValues = newValue.split(' ')
+
+				switch (splitValues[1]){
+					case "K":
+						return parseFloat(splitValues[0])
+						break
+					case "°F":
+						return parseFloat(splitValues[0])/1.8
+						break
+					case "°C":
+						return parseFloat(splitValues[0])
+						break
+					default:
+						throw new Error("O2J data compatibility error: Unknown temperature unit")
+						return undefined
+					
+				}
+
+
+			} else {
+				throw new Error("O2J data compatibility error: Invalid parameter")
+				return undefined
+			}	
+		}
+	}
+
+	this.setValue = function(newValue){
+		temperatureSI = convertToKelvin(newValue)
+	}
+
+	this.increase = function(newValue){
+		temperatureSI += convertToKelvinInt(newValue)
+	}
+
+	this.decrease = function(newValue){
+		temperatureSI -= convertToKelvinInt(newValue)
+		if (temperatureSI < 0) temperatureSI = 0
+	}
+
+	this.toString = function(){
+		return temperatureSI + " K"
+	}
+
+	this.inCelsius = function(){
+		return temperatureSI-273.15 + " °C"
+	}
+
+	this.inFarenheit = function(){
+		return 1.8*(temperatureSI-273.15)+32 + " °F"
+		
+	}
+
+	if (varTemp) this.setValue(varTemp)
+}

@@ -1,0 +1,309 @@
+var FANSettings
+
+function o2jWindow(programLocation, winArguments){
+	if (FANSettings === undefined){
+		FANSettings = new connection(O2J.getPath() + "\\window\\settings.dtx", o2jDBConstants.readOnly)
+	}
+
+	
+	FANSettings.setSection('Contemplat')
+	
+	var programLocation = programLocation.convertToSlashes()
+	//var programFile = new textfile(programLocation + "\\index.htm")
+	var winAddr = new textfile(O2J.getPath() + "\\window\\template.dtx")
+	var originalCode = winAddr.passThru()
+
+	/*
+	if (!programFile.exists() && programLocation.toLowerCase().substring(0, 4) != "http"){
+		programFile = new textfile(programLocation)
+	}
+	*/
+
+	//originalCode = programFile.passThru()
+
+
+	this.getWidth = function(includeShadow){
+		gotWidth = parseInt(originalCode.inside("defWidth=", " "))
+		if (includeShadow === true) gotWidth += 20
+		return gotWidth
+	}
+
+	this.getHeight = function(includeShadow){
+		gotHeight = parseInt(originalCode.inside("defHeight=", " "))
+		if (includeShadow === true) gotHeight += 20
+		return gotHeight
+	}
+
+	this.getTitle = function(){
+		return originalCode.inside("<TITLE>","</TITLE>")
+	}
+
+	
+	
+	originalCode = originalCode.fullReplace('[setAddr]', winAddr.getPath())
+
+	if (winArguments !== undefined && winArguments !== null) originalCode = originalCode.fullReplace('[arguments]', winArguments)
+	else originalCode = originalCode.split('?[arguments]').join('')
+
+	noMinButtonRegex = /NOMIN=(1|"1")/
+	noMaxButtonRegex = /NOMAX=(1|"1")/
+	fullScreenRegex = /FULLSCREEN=(1|"1")/
+
+	if (noMinButtonRegex.test(originalCode)){
+		originalCode = originalCode.appendToEach('id=min', ' style="display: none"')
+	}
+
+	if (noMaxButtonRegex.test(originalCode)){
+		originalCode = originalCode.appendToEach('id=max', ' style="display: none"')
+	}
+
+	if (fullScreenRegex.test(originalCode)){
+		originalCode = originalCode.appendToEach('<iframe', ' style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; z-index: 123456789"')
+	}
+
+	useIcon = winAddr.baseName()
+	if (winAddr.baseName() == "index") useIcon = "icon"
+
+	var iconFile = new file(programLocation+"\\"+useIcon+".png")
+
+
+	FANSettings.setSection('Contemplat')	
+	originalCode = originalCode.fullReplace('[loadIcon]',"<img id=windowIcon width=24 height=24 src=\""+iconFile.getPath()+"\">")
+	originalCode = originalCode.fullReplace('[color1]', FANSettings.getAttribute('Color 1'))
+	originalCode = originalCode.fullReplace('[color2]', FANSettings.getAttribute('Color 2'))
+	originalCode = originalCode.fullReplace('[resAddr]', O2J.getPath().fullReplace("\\", "/") + "/window/")
+	originalCode = originalCode.fullReplace('[defWidth]', 800 + "px")
+	originalCode = originalCode.fullReplace('[defHeight]', 480 + "px")
+	
+	originalCode = originalCode.fullReplace('[fixH]', (480-35) + "px")
+
+	originalCode = originalCode.fullReplace('[defShWidth]', 820 + "px")
+	originalCode = originalCode.fullReplace('[defShHeight]', 500 + "px")
+
+	defWinLeft = parseInt(0.5*(window.innerWidth - 800))
+	defWinTop = parseInt(0.5*(window.innerHeight - 480))
+
+	originalCode = originalCode.fullReplace('[defX]', defWinLeft + "px")
+	originalCode = originalCode.fullReplace('[defY]', defWinTop + "px")
+	originalCode = originalCode.fullReplace('[defXf]', (defWinLeft+800) + "px")
+	originalCode = originalCode.fullReplace('[defYf]', (defWinTop+480) + "px")
+	originalCode = originalCode.fullReplace('[defShX]', (parseInt(defWinLeft)-10) + "px")
+	originalCode = originalCode.fullReplace('[defShY]', (parseInt(defWinTop)-10) + "px")
+	originalCode = originalCode.fullReplace('[HTMSRC]', escape(winAddr.getPath()) + "px")
+	originalCode = originalCode.fullReplace('[isResizableD1]', "")
+	originalCode = originalCode.fullReplace('[isResizableD2]', "")
+	originalCode = originalCode.fullReplace('[isResizableY]', "")
+	originalCode = originalCode.fullReplace('[isResizableX]', "")
+	originalCode = originalCode.fullReplace('[isResizableXf]', "")
+	
+	O2J.getPath()
+	
+	
+	if (FANSettings.getAttribute("Basic") == "Yes"){
+		originalCode = originalCode.split('[winStyleSheet]').join(file_passThru(O2J.getPath() + "\\window\\resources\\basic.css"))
+	} else {
+		originalCode = originalCode.split('[winStyleSheet]').join(file_passThru(O2J.getPath() + "\\window\\resources\\index.css"))
+	}	
+	
+	
+	if (FANSettings.getAttribute("Shadow") == "Yes"){
+		originalCode = originalCode.split('[isShadowActivated]').join('')
+	} else {
+		originalCode = originalCode.split('[isShadowActivated]').join('visibility: hidden; ')
+	}	
+
+
+	
+	
+	dumpfile = new textfile(O2J.getPath() + "\\window\\log.log")
+	dumpfile.create(originalCode)
+		
+	this.render = function(){
+		document.body.innerHTML += originalCode
+	}
+}
+
+var o2jWindowGlobalObject = new (function(){
+	ddEnabled = false
+	ddrsXEnabled = false
+	ddrsYEnabled = false
+	ddrsXfEnabled = false
+	ddrsD1Enabled = false
+	ddrsD2Enabled = false
+		
+	this.dd = function(){
+		if (event.button != 1) ddEnd()
+
+		if (ddEnabled){
+			activeWin = retrieveActiveWindow()
+	 
+			xPos = parseInt(nowX)+parseInt(event.clientX)-parseInt(offsetx)
+			yPos = parseInt(nowY)+parseInt(event.clientY)-parseInt(offsety)
+
+			if (parseInt(document.getElementsByName('window').length) > 1) {
+				winRef = document.getElementsByName('window')[activeWin]
+				winShiRef = document.getElementsByName('windowShine')[activeWin]
+				winShaRef = document.getElementsByName('windowShadow')[activeWin]
+				winGlaRef = document.getElementsByName('windowGlass')[activeWin]
+			} else {
+				winRef = document.getElementById('window')
+				winShiRef = document.getElementById('windowShine')
+				winShaRef = document.getElementById('windowShadow')
+				winGlaRef = document.getElementById('windowGlass')
+			}
+
+
+			winRef.style.left = xPos + "px"
+			winRef.style.top = yPos + "px"
+
+			winShiRef.style.left = xPos + "px"
+			winShiRef.style.top = yPos + "px"
+
+			winShaRef.style.left = (xPos - 10) + "px"
+			winShaRef.style.top = (yPos - 10) + "px"
+		
+
+			wDim = parseInt(winRef.style.width);
+			hDim = parseInt(winRef.style.height);
+			newX = parseInt(winRef.style.left);
+			newY = parseInt(winRef.style.top);
+
+			winShiRef.style.width = wDim + "px"
+			winShiRef.style.height = hDim + "px"
+
+
+			winShaRef.style.width = (wDim+20) + "px"
+			winShaRef.style.height = (hDim+20) + "px"
+			
+			winGlaRef.style.clip = "rect("+newY+"px "+(newX+wDim)+"px "+((newY+hDim))+"px "+newX+"px)"
+		
+
+		}
+
+		if (ddrsXEnabled){
+			defWid = parseInt(event.clientX)-parseInt(nowX)
+			if (parseInt(defWid) < 150) defWid = 150
+			winRef.style.width = parseInt(defWid) + "px"
+		}
+
+		if (ddrsXfEnabled){
+
+			defWid = parseInt(nowX)-parseInt(event.clientX)
+			winRef.style.width = (parseInt(defWid)+pwDim) + "px"
+		}
+
+		if (ddrsYEnabled){
+
+			defHei = parseInt(event.clientY)-parseInt(nowY)
+			if (parseInt(defHei) < 30) defHei = 150
+			winRef.style.height = parseInt(defHei) + "px"
+
+		}
+
+		if (ddrsXfEnabled || ddrsXEnabled || ddrsYEnabled){
+			wDim = parseInt(winRef.style.width);
+			hDim = parseInt(winRef.style.height);
+
+			xPos = parseInt(winRef.style.left) + "px"
+			yPos = parseInt(winRef.style.top) + "px"
+
+			winGlaRef.style.clip = "rect("+yPos+"px "+(xPos+wDim)+"px "+(yPos+hDim)+"px "+xPos+"px)"
+			winShaRef.style.width = (parseInt(winRef.style.width)+20) + "px"
+			winShaRef.style.height = (parseInt(winRef.style.height)+20) + "px"
+		
+			winShiRef.style.width = parseInt(winRef.style.width) + "px"
+			winShiRef.style.height = parseInt(winRef.style.height) + "px"
+
+			if (ddrsXfEnabled){
+				winRef.style.left = event.clientX + "px"
+				winShaRef.style.left = (parseFloat(winRef.style.left)-10) + "px"
+				winShiRef.style.left = parseFloat(winRef.style.left) + "px"
+
+			}	
+		}
+	}
+	
+	this.ddInit = function(printScreen, opt){
+		while (printScreen.id != "window" && printScreen.tagName != "BODY"){
+			printScreen = printScreen.parentElement
+		}
+
+		//alert(printScreen.sourceIndex)
+		document.getElementById('windowIndex').value = printScreen.getElementsByTagName("INPUT")[0].value
+
+		activeWin = document.getElementById('windowIndex').value
+		activateWindow(activeWin)
+
+		if (parseInt(windowFrameID.length) > 1) {
+			winRef = document.getElementsByName('window')[activeWin]
+			winShiRef = document.getElementsByName('windowShine')[activeWin]
+			winShaRef = document.getElementsByName('windowShadow')[activeWin]
+			winGlaRef = document.getElementsByName('windowGlass')[activeWin]
+		} else {
+			winRef = document.getElementById('window')
+			winShiRef = document.getElementById('windowShine')
+			winShaRef = document.getElementById('windowShadow')
+			winGlaRef = document.getElementById('windowGlass')
+		}
+
+
+		if (opt == undefined) opt = "move"
+
+		pwDim = parseInt(winRef.style.width)
+		phDim = parseInt(winRef.style.height)
+
+		//alert(document.getElementById('windowIndex').value)
+
+		if (printScreen.id == "window" && printScreen.max != "true"){
+			offsetx = event.clientX
+			offsety = event.clientY
+
+			nowX = parseInt(winRef.style.left);
+			nowY = parseInt(winRef.style.top);
+
+
+			if (opt == "move") ddEnabled = true
+			else if (opt == "resizeX") ddrsXEnabled = true
+			else if (opt == "resizeY") ddrsYEnabled = true
+			else if (opt == "resizeXf") ddrsXfEnabled = true
+			else if (opt == "resizeD1"){
+				ddrsXfEnabled = true
+				ddrsYEnabled = true
+			}
+			else if (opt == "resizeD2"){
+				ddrsXEnabled = true
+				ddrsYEnabled = true
+			}
+
+
+		}
+		windowRighter()
+		
+	}	
+	
+	this.ddEnd = function(opt){
+
+		ddEnabled = false
+		ddrsXEnabled = false
+		ddrsYEnabled = false
+		ddrsXfEnabled = false
+		ddrsD1Enabled = false
+		ddrsD2Enabled = false
+
+		try {
+
+			winWidth = parseFloat(document.getElementsByName('window')[activeWin].style.width)/2
+
+			if (parseFloat(document.getElementsByName('window')[activeWin].style.top) <= -5){
+				FANMax(document.getElementsByName('window')[activeWin])
+			} else if (parseFloat(document.getElementsByName('window')[activeWin].style.left) <= -1*parseInt(winWidth)){
+				FANAeroSnap(document.getElementsByName('window')[activeWin],"left")
+			} else if (parseFloat(document.getElementsByName('window')[activeWin].style.left) >= parseInt(window.innerWidth) - 2*parseInt(winWidth)){
+				FANAeroSnap(document.getElementsByName('window')[activeWin],"right")
+			}
+
+		} catch (err){}
+
+	}
+	
+})()

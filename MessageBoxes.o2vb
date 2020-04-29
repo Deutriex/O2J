@@ -1,0 +1,7 @@
+Function StopMessage(message, boxTitle)
+	StopMessage = MsgBox(Message,16,boxTitle)
+End Function
+
+Function StopMessageOKCancel(message, boxTitle)
+	StopMessageOKCancel = MsgBox(Message,16+1,boxTitle)
+End Function

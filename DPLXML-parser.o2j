@@ -1,0 +1,299 @@
+var lineBreak = unescape("%0D%0A")
+
+function DPLXMLobject(readFile){
+	var mainObject = this
+	var ndefsArray = []
+	
+	readFile = readFile.fullReplace("\x0D\x0A", "\x0A")
+	readFile = readFile.split("\x0A")
+
+	yzx = 0
+
+	lastObject = {
+		itself: undefined,
+		idtIndex: -1
+	}
+
+	parentObject = {
+		itself: undefined,
+		idtIndex: -1
+	}
+
+
+	objStack = []
+
+	for (fileLine in readFile){
+		if (readFile.hasOwnProperty(fileLine)){
+
+			for (idtIndex = 0; readFile[fileLine].charCodeAt(idtIndex) == 9; idtIndex++){}
+
+			if (idtIndex == 0){
+
+				parentObject.itself = ndefsArray
+				objStack = []
+
+			} if (idtIndex-lastObject.idtIndex == 1){
+
+				parentObject.itself = lastObject.itself
+				objStack.push(lastObject.itself)
+
+			} else if (idtIndex-lastObject.idtIndex < 0){
+
+				loopInt = idtIndex-lastObject.idtIndex
+
+				while (loopInt++){
+					objStack.pop()
+				}
+
+				if (objStack.length){
+					parentObject.itself = objStack[objStack.length-1]
+				} else {
+					parentObject.itself = ndefsArray
+				}
+
+
+			}
+
+			if (parentObject.itself == undefined)
+				parentObject.itself = ndefsArray
+
+			sectionLabel = readFile[fileLine].substring(idtIndex, readFile[fileLine].length)
+
+			if (sectionLabel != ""){
+				if (readFile[fileLine].indexOf(': ') == -1){
+
+					newNode = {
+						name: sectionLabel,
+						children: []
+					}
+
+					parentObject.itself[sectionLabel] = newNode.children
+					lastObject.itself = newNode.children
+
+				} else { // No exit node
+					attribName = sectionLabel.substring(0, sectionLabel.indexOf(': '))
+					attribValue = sectionLabel.substring(sectionLabel.indexOf(': ')+2, sectionLabel.length)
+
+					if (parentObject.itself){
+						parentObject.itself[attribName] = attribValue
+					}
+		
+					lastObject.itself = undefined		
+				}
+			}
+
+			lastObject.idtIndex = idtIndex
+		}
+	}
+	
+	this.TESTMETHOD = function(){
+		return ndefsArray
+	}
+
+	this.getAttribute = function(addrPath){
+		addrPath = addrPath.split(' > ')
+		curObj = ndefsArray
+
+		for (addrElement in addrPath){
+			if (addrPath.hasOwnProperty(addrElement) && curObj !== undefined){
+				curObj = curObj[addrPath[addrElement]]
+			}
+		}
+
+		return curObj
+	}
+
+	var itList = {}
+
+	this.iterators = {
+		set: function(itName, addrPath){
+			curObj = ndefsArray
+
+			if (addrPath !== undefined){
+				addrPathT = addrPath.split(' > ')
+
+				for (addrElement in addrPathT){
+					if (addrPath.hasOwnProperty(addrElement) && curObj !== undefined){
+						curObj = curObj[addrPathT[addrElement]]
+					}
+				}		
+			}
+			
+
+			itList[itName] = {
+				currentDir: addrPath,
+				parent: curObj,
+				itself: curObj ? curObj[curObj.getNameAt(0)] : undefined,
+				position: 0
+			}
+		},
+
+		sortRecords: function(itName){
+			nameArray = []
+			itObject = itList[itName]
+
+			azx = 0
+			for (record in itObject.parent){
+				if (itObject.parent.hasOwnProperty(record)){
+					
+					var tmpObj = {
+						name: itObject.parent.getNameAt(azx),
+						index: azx++
+					}
+
+					nameArray.push(tmpObj)
+				}
+			}
+
+			function tmpNameArrayCmp(a, b){
+				if (a.name < b.name) return -1;
+				if (a.name > b.name) return 1;
+				return 0;
+			}
+
+			nameArray.sort(tmpNameArrayCmp)
+			itObject.scanOrder = nameArray
+			
+			
+			console.log(nameArray)
+		},
+
+		resetScanOrder: function(itName){
+			delete itList[itName].scanOrder
+		},
+
+		getPath: function(itName){
+			return itList[itName].currentDir
+		},
+
+		clear: function(itName){
+			delete itList[itName]
+		},
+
+		getIterationsCount: function(itName){
+			return itList[itName].parent.getLength()
+		},
+
+		getAttribute: function(itName, attr){
+			if (!itList[itName].scanOrder){
+
+				if (attr == "name"){
+					return itList[itName].parent.getNameAt(itList[itName].position)
+				} else {
+					if (attr){
+						return itList[itName].itself[attr]
+					} else {
+						return itList[itName].parent[itList[itName].parent.getNameAt(itList[itName].position)]
+					}
+				}
+
+			} else {
+				var getPosition = itList[itName].position
+				var getActualPosition = itList[itName].scanOrder[getPosition].index
+				var getActualLabel = itList[itName].parent.getNameAt(getActualPosition)
+
+				
+				if (attr == "name"){
+					return itList[itName].parent.getNameAt(getActualPosition)
+				} else {
+					if (attr){
+						return itList[itName].parent[getActualLabel][attr]
+					} else {
+						return itList[itName].parent[getActualLabel][itList[itName].parent.getNameAt(getActualPosition)]
+					}
+				}
+			}
+		},
+
+		moveFirst: function(itName){
+			itObject = itList[itName]
+			itObject.position = 0
+			if (itObject.parent !== undefined){
+				itObject.itself = itObject.parent[itObject.parent.getNameAt(itObject.position)]
+			}
+		},
+	
+		moveNext: function(itName){
+			itObject = itList[itName]
+			itObject.position++
+			itObject.itself = itObject.parent[itObject.parent.getNameAt(itObject.position)]
+		},
+
+		moveLast: function(itName){
+			itObject = itList[itName]
+			itObject.position = itObject.parent.getLength()-1
+			itObject.itself = itObject.parent[itObject.parent.getNameAt(itObject.position)]
+		},
+
+		atEnd: function(itName){
+			if (itList[itName].itself !== undefined) return false
+			return true
+		},
+
+		moveTo: function(itName, newPosition){
+			itObject = itList[itName]
+
+			if ((typeof newPosition) == "number"){
+				if (newPosition >= 0 && newPosition <= itObject.parent.length-1)
+				itObject.position = newPosition
+				itObject.itself = itObject.parent[itObject.position]
+			}
+		},
+
+		getRecordNumber: function(itName){
+			itObject = itList[itName]
+			return itObject.position
+		},
+
+		getSumOf: function(itName, attr){
+			gotSum = 0
+			this.iterators.moveFirst(itName)
+	
+			while (!this.atEnd(itName)){
+				gotSum += parseFloat(this.iterators.getAttribute(itName, attr))
+				this.moveNext(itName)
+			}
+	
+			return gotSum
+		},
+
+		searchFor: function(itName, attribName, attribValue){
+			attribName = attribName || ""
+			attribValue = attribValue || ""
+			
+			if (attribName == "" && attribValue == ""){
+				return null
+			}
+			
+			this.moveFirst(itName)
+			
+			while (!this.atEnd(itName)){
+				testIt = this.getAttribute(itName, "name")
+				setPathTo = ""
+				if (this.getPath(itName) != undefined){
+					setPathTo = this.getPath(itName) + " > "
+				}
+			
+				buildStr = setPathTo + testIt
+				
+				if (attribValue != "" && attribName != ""){
+					buildStr += " > " + attribName
+				}
+				
+				testIt2 = mainObject.getAttribute(buildStr)
+
+				
+				if ((attribValue != "" && attribName != "" && testIt2 == attribValue) || (attribValue == "" && attribName == testIt) || (attribName == "" && testIt2 == attribValue)){
+					return testIt
+				}
+
+				this.moveNext(itName)
+			}
+			
+			return null
+
+		}
+
+	}
+
+}

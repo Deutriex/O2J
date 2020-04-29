@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<style>
+	DIV {backface-visibility; visible; width: 250px; height: 250px; position: absolute; top: 50%; left: 50%; margin-left: -125px; margin-top: -125px}
+
+	
+</style>
+
+<hta:application
+
+>
+
+<meta http-equiv="x-ua-compatible" content="IE=10">
+
+<script>
+	function face(dX, dY, dZ, alpha, beta, gamma, color){
+		newFace = document.createElement("DIV")
+		newFace.style.transform = "perspective(250px) translateX("+dX+"px) translateY("+dY+"px) translateZ("+dZ+"px) rotateX("+alpha+"deg) rotateY("+beta+"deg) rotateZ("+gamma+"deg)"
+		newFace.style.backgroundColor = color
+		document.body.appendChild(newFace)
+
+		this.getObject = function(){
+			return newFace
+		}
+	}
+
+	function block(bX, dY, dZ, th, phi, psi){
+		newCube = document.createElement("SPAN")
+		newCube.style.transform = "translateZ(-100px) rotateX(-180deg)"
+		document.body.appendChild(newCube)
+
+		blockFront = new face(0,0,125,0,0,0,"red")
+		blockBack = new face(0,0,125,180,0,0,"cyan")
+
+		blockLeft = new face(0,0,125,0,90,0,"blue")
+		blockRight = new face(0,0,125,0,-90,0,"yellow")
+
+		blockTop = new face(0,0,125,90,0,0,"green")
+		blockBottom = new face(0,0,125,-90,0,0,"magenta")
+
+		newCube.appendChild(blockFront.getObject())
+		newCube.appendChild(blockBack.getObject())	
+		newCube.appendChild(blockLeft.getObject())	
+		newCube.appendChild(blockRight.getObject())	
+		newCube.appendChild(blockTop.getObject())
+		newCube.appendChild(blockBottom.getObject())
+
+	}
+</script>
+
+
+</head>
+<body style="resizeTo(1280,720)" onload="mostraBlock()">
+
+<!--
+<div style="position: absolute; left: 0px; top: 0px; width: 250px; height: 250px; background: red; transform: perspective(250px) rotateX(0deg) rotateY(45deg)"></div>
+<div style="position: absolute; left: 0px; top: 0px; width: 250px; height: 250px; background: red; transform: perspective(250px) rotateX(0deg) rotateY(45deg) translateX(300px)"></div>
+<div style="position: absolute; left: 0px; top: 0px; width: 250px; height: 250px; background: red; transform: perspective(250px) rotateX(0deg) rotateY(45deg) translateX(600px)"></div>
+<div style="position: absolute; left: 0px; top: 0px; width: 250px; height: 250px; background: red; transform: perspective(250px) rotateX(0deg) rotateY(45deg) translateX(300px) translateY(300px)"></div>
+<div style="position: absolute; left: 0px; top: 0px; width: 250px; height: 250px; background: red; transform: perspective(250px) rotateX(0deg) rotateY(45deg) translateX(600px) translateY(300px)"></div>
+-->
+
+<script>
+	function mostraBlock(){
+		novoBlock = new block(0,0,0,0,0,0)
+	}
+		//alert(document.body.innerHTML)
+</script>
+
+</body>
+</html>

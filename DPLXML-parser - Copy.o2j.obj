@@ -1,0 +1,194 @@
+var lineBreak = unescape("%0D%0A")
+
+function DPLXMLobject(readFile){
+	var ndefsArray = []
+	readFile = readFile.split(lineBreak)
+
+	yzx = 0
+
+	lastObject = {
+		itself: undefined,
+		idtIndex: -1
+	}
+
+	parentObject = {
+		itself: undefined,
+		idtIndex: -1
+	}
+
+
+	objStack = []
+
+	for (xyz = 0; xyz < readFile.length; xyz++){
+
+		for (idtIndex = 0; readFile[xyz].charCodeAt(idtIndex) == 9; idtIndex++){}
+
+		if (idtIndex == 0){
+
+			parentObject.itself = ndefsArray
+			objStack = []
+
+		} if (idtIndex-lastObject.idtIndex == 1){
+
+			parentObject.itself = lastObject.itself
+			objStack.push(lastObject.itself)
+
+		} else if (idtIndex-lastObject.idtIndex < 0){
+
+			loopInt = idtIndex-lastObject.idtIndex
+
+			while (loopInt++){
+				objStack.pop()
+			}
+
+			if (objStack.length)
+				parentObject.itself = objStack[objStack.length-1]
+			else
+				parentObject.itself = ndefsArray
+
+
+		}
+
+		if (parentObject.itself == undefined)
+			parentObject.itself = ndefsArray
+
+		sectionLabel = readFile[xyz].substring(idtIndex, readFile[xyz].length)
+
+		if (sectionLabel != ""){
+			if (readFile[xyz].indexOf(': ') == -1){
+
+				newNode = {
+					name: sectionLabel,
+					children: []
+				}
+
+				parentObject.itself.push(newNode)
+				parentObject.itself[sectionLabel] = newNode.children
+				lastObject.itself = newNode.children
+
+			} else { // No exit node
+				attribName = sectionLabel.substring(0, sectionLabel.indexOf(': '))
+				attribValue = sectionLabel.substring(sectionLabel.indexOf(': ')+2, sectionLabel.length)
+
+				newNode = {
+					name: attribName,
+					value: attribValue
+				}
+
+				if (parentObject.itself === undefined){
+					console.log(lastObject)
+				}
+
+				if (parentObject.itself){
+					parentObject.itself[attribName] = attribValue
+					parentObject.itself.push(newNode)
+				}
+	
+				lastObject.itself = undefined		
+				
+			}
+		}
+
+		lastObject.idtIndex = idtIndex
+
+	}
+
+	this.TESTMETHOD = function(){
+		return ndefsArray
+	}
+
+	this.getAttribute = function(addrPath){
+		addrPath = addrPath.split(' > ')
+		curObj = ndefsArray
+
+		for (ds = 0; ds < addrPath.length && curObj !== undefined; ds++){
+			curObj = curObj[addrPath[ds]]
+			//alert(curObj)
+
+		}
+
+		return curObj
+	}
+
+	var itList = {}
+
+	this.setIterator = function(itName, addrPath){
+		curObj = ndefsArray
+
+		if (addrPath !== undefined){
+			addrPathT = addrPath.split(' > ')
+
+			for (ds = 0; ds < addrPathT.length && curObj !== undefined; ds++){
+				//console.log(curObj)
+				curObj = curObj[addrPathT[ds]]
+			}
+		}
+
+		itList[itName] = {
+			currentDir: addrPath,
+			parent: curObj,
+			itself: curObj[0],
+			position: 0
+		}
+
+	}
+
+	this.clearIterator = function(itName){
+		itList[itName] = undefined
+	}
+
+	this.getIterationsCount = function(itName){
+		return itList[itName].parent.length
+	}
+
+	this.getIteratorAttribute = function(itName, attr){
+
+		//console.log(itObject.parent)
+
+		if (attr == "name"){
+			return itList[itName].itself.name
+		} else {
+
+			return itList[itName].itself.children[attr]
+		}
+	}
+
+
+	this.moveFirst = function(itName){
+		itObject = itList[itName]
+
+		itObject.position = 0
+		itObject.itself = itObject.parent[itObject.position]
+	}
+
+	this.moveNext = function(itName){
+		itObject = itList[itName]
+
+		itObject.itself = itObject.parent[++itObject.position]
+	}
+
+	this.moveLast = function(itName){
+		itObject = itList[itName]
+
+		itObject.position = itObject.parent.length-1
+		itObject.itself = itObject.parent[itObject.position]
+	}
+
+	this.atEnd = function(itName){
+		if (itList[itName].itself !== undefined) return false
+		return true
+	}
+
+	this.getSumOf = function(itName, attr){
+		gotSum = 0
+		this.moveFirst(itName)
+
+		while (!this.atEnd(itName)){
+			gotSum += parseFloat(this.getIteratorAttribute(itName, attr))
+			this.moveNext(itName)
+		}
+
+		return gotSum
+	}
+
+}

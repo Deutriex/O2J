@@ -1,0 +1,83 @@
+<img src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/glassScreen.png" id="windowGlass" style="opacity: 1; border-radius: 5px; visibility: visible; display: inline; position: absolute; top: 0px; left: 0px; width: 100%; height: 100%; clip: rect(52px 992px 532px 192px); z-index: 987654325; filter: alpha(opacity=0,enabled=false)">
+
+<table cellspacing=0 cellpadding=0 id="windowShadow" style="position: absolute; opacity: 1; top: 42px; left: 182px; z-index: 987654324; width: 820px; height: 500px">
+<tr style="height: 10px" height=10 id=shdw1><td style="width: 10px; font-size: 1px"><img src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/shadow1.png"></td><td style="height: 10px; font-size: 1px"><img src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/shadowtop.png" width=100% style="height: 10px"></td><td style="width: 10px; font-size: 1px"><img src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/shadow2.png"></td></tr>
+
+<tr><td style="width: 10px; background-image: url('C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/shadowleft.png') transparent left top repeat-y" id=shdw2>&nbsp;</td>
+<td style="background: rgba(255,0,0,0.7);">
+
+<span id=windowContemplat style="background: rgba(255,0,0,0.7); display: inline; visibility: visible; width: 205px; height: 410px"></span>
+
+</td>
+<td style="width: 10px; background-image: url('C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/shadowright.png') transparent left top repeat-y" id=shdw3>&nbsp;</td>
+</tr>
+
+<tr height=10 style="height: 10px" id=shdw4><td style="width: 10px; font-size: 1px"><img src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/shadow3.png"></td><td style="font-size: 1px"><img src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/shadowbottom.png" width=100% style="height: 10px"></td><td style="width: 10px; font-size: 1px"><img src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/shadow4.png"></td></tr>
+</table>
+
+
+<img src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/winshine.png" id="windowShine" style="opacity: 0; border-radius: 5px; visibility: visible; display: inline; position: absolute; top: 52px; left: 192px; width: 800px; height: 480px; z-index: 987654327">
+
+
+<table id="window" name="window" style="width: 800px; height: 480px; visibility: visible; opacity: 0; box-shadow: 2px 2px 5px #000; filter: alpha(opacity=0,enabled=false); display: inline; position: absolute; top: 52px; left: 192px; z-index: 987654326" cellspacing=0 cellpadding=0>
+<tr style="height: 30px" id=titlebar class="titlebar">
+<td id="windowTitle_p">
+
+<table width=100% height=100% cellspacing=0 cellpadding=0>
+<tr style="height: 30px">
+<td style="width: 30px; text-align: center"><img id=windowIcon width=24 height=24 src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/configPages/template.png"></td>
+<th  style="text-align: center !important; cursor: default; color: White !important; font-family: Segoe UI; font-size: 12pt; font-weight: normal; cursor: h-resize" id="windowTitle" onmousedown="ddInit(this)" ondblclick="FANMax(this)" >[appTitle]</th>
+<td style="background: url(resources/apptitle.png)" align="right" style="width: 100px; text-align: right">
+
+<table cellspacing=0 cellpadding=0 id="minmaxclose">
+<tr>
+<td valign=top  id=min><img src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/min.png" onclick="FANAlter(this.windowIndex)" id=min_ch></td>
+<td id=max valign=top ><img id=max_c onclick="FANMax(this)"  src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/max.png" id=max_ch></td>
+<td id=close valign=top><img src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/resources/close-single.png" onclick="FANKillSpec()" id=closeWin></td>
+</tr>
+</table>
+
+</td>
+
+</tr>
+</table>
+
+</td>
+</tr>
+
+<tr id=mainwin style="display: inline">
+<td>
+
+<table style="width: 100%; height: 100%" cellspacing=0 cellpadding=0>
+<tr>
+<td id=leftwin style="width: 4px"></td>
+<td id="windowContainer">
+<input type="hidden" name="winID" value=0>
+
+<!-- key component -->
+<iframe id=windowFrame onreadystatechange="" frameBorder=0 style="height: 445px; width: 100%" src="C:/Users/Práticas/Google Drive/Specialisterne/deltacal/../O2J/window/template.dtx" allowTransparency="true" application="yes" border=no innerborder="no"></iframe>
+<!-- key component -->
+
+</td>
+<td id=rightwin  style="width: 4px"></td>
+</tr>
+</table>
+
+
+</td>
+</tr>
+<tr style="height: 4px"><td style="height: 4px">
+
+<table cellspacing=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+<td  style="width: 4px; font-size: 0px; font-size: 1px" id=dig1win></td>
+<td id=bottomwin  style="height: 4px; font-size: 1px"></td>
+<td  style="width: 4px; font-size: 0px; font-size: 0px" id=dig2win></td>
+</tr>
+</table>
+
+
+
+
+</td></tr>
+</table>

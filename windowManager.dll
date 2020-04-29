@@ -1,0 +1,852 @@
+var windowFrameID = new Array()
+var activeDesktop = 0
+var windowInfo = new Array()
+var curWin
+
+function fixCHeight(){
+	for (j = 0; j < document.getElementsByName("windowFrame").length; j++){
+		document.getElementsByName("windowFrame")[j].style.height = (parseInt(document.getElementsByName("window")[j].style.height)-40) + "px"
+	}
+}
+
+function getHTMLTitle(psrc){
+	gHT = unescape(file_passThru(conv2sl(psrc)).split(unescape("%0D%0A")).join('').split(unescape("%09")).join(''))
+
+	try {
+		gHT = gHT.split('<TITLE>')[1].split('</TITLE>')[0]
+		
+	} catch (err){
+		try {
+			gHT = gHT.split('<title>')[1].split('</title>')[0]
+		} catch (err2){
+			gHT = baseName(psrc)
+		}
+	}
+
+	if (gHT == "" || gHT == undefined || gHT == null) gHT = "____________________"
+	return gHT
+}
+
+function getWindowsDimensions(psrc, opt){
+	gHT = unescape(file_passThru(conv2sl(psrc)).split(unescape("%0D%0A")).join('').split(unescape("%09")).join(''))
+
+	try {
+		if (opt == "winX") defD = gHT.split('defWidth=')[1].split(' ')[0]
+		if (opt == "winY") defD = gHT.split('defHeight=')[1].split(' ')[0]
+		if (opt == "winShX") defD = parseInt(gHT.split('defWidth=')[1].split(' ')[0]) + parseInt(20)
+		if (opt == "winShY") defD = parseInt(gHT.split('defHeight=')[1].split(' ')[0]) + parseInt(20)
+	} catch (err){
+		if (opt == "winX") defD = 800
+		if (opt == "winY") defD = 480
+		if (opt == "winShX") defD = 820
+		if (opt == "winShY") defD = 500
+
+	}
+
+	return defD
+}
+
+function isTAKENAWA(){
+	isTK = conv2bar(location.href).toUpperCase().split('/VDE/SYSTEM.HTM').length
+	rtVal = parseInt(isTK)-parseInt(1)
+
+	return retVal
+
+}
+
+function FANStart(programLocation, arguments){
+	setTimeout("windowRighter()", 375)
+	programLocation = conv2sl(new String(programLocation))
+
+	if (isVirtualDesktopEnvironment()) FANSettings = window.top.frames[0].FANSettings
+
+	isIndex = "/index.htm"
+	if (arguments == "ANYHTM") isIndex = ""
+
+	htmsrc = programLocation + "\\index.htm"
+	//if (arguments != "ANYHTM") windowsExplorer.copyFile(programLocation + "\\index.hta",htmsrc)
+
+	hhome = home
+
+	progLocat = programLocation + isIndex
+
+	winAddr = "\\lib\\window\\FANFreeWindow.dtx"
+	originalCode = file_passThru(home + winAddr)
+
+	while (originalCode == ""){
+		hhome = hhome + "../"
+		originalCode = file_passThru(hhome + winAddr)
+	}
+
+	originalCode = originalCode.split('[setAddr]').join(programLocation + isIndex)
+
+
+	try {
+		if (arguments != arguments.toUpperCase()) originalCode = originalCode.split('[arguments]').join(arguments)
+		else originalCode = originalCode.split('?[arguments]').join('')
+	} catch (err){
+		originalCode = originalCode.split('?[arguments]').join('')
+	}
+
+	detByCNT = file_passThru(programLocation + isIndex).toUpperCase()
+
+	if (detByCNT.indexOf('NOMIN=1') != -1 || detByCNT.indexOf('NOMIN="1"') != -1){
+		originalCode = originalCode.split('id=min').join('id=min style="display: none"')
+	}
+
+	if (detByCNT.indexOf('NOMAX=1') != -1 || detByCNT.indexOf('NOMAX="1"') != -1){
+		originalCode = originalCode.split('id=max').join('id=max style="display: none"')
+	}
+
+	if (detByCNT.indexOf('FULLSCREEN=1') != -1 || detByCNT.indexOf('FULLSCREEN="1"') != -1){
+		originalCode = originalCode.split('<!-- key component -->')[1]
+		originalCode = originalCode.split('<iframe').join('<iframe style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; z-index: 123456789"')
+	}
+
+	defWinWidth = getWindowsDimensions(progLocat,"winX")
+	defWinHeight = getWindowsDimensions(progLocat,"winY")
+
+	useIco = baseName(progLocat)
+	if (useIco == "index") useIco = "icon"
+
+	originalCode = originalCode.split('[loadIcon]').join('<img id=windowIcon src="'+programLocation+'/'+useIco+'.png" onerror=\'this.src = "'+conv2bar(hhome)+'/lib/window/resources/page.png"\' height=24 width=24>')
+	originalCode = originalCode.split('[color1]').join(FANSettings['Contemplat']['Color 1'])
+	originalCode = originalCode.split('[color2]').join(FANSettings['Contemplat']['Color 2'])
+	originalCode = originalCode.split('[opacityLevel]').join(FANSettings['Contemplat']['Opacity'])
+	originalCode = originalCode.split('[resAddr]').join(conv2bar(hhome) + "/lib/window/")
+
+	originalCode = originalCode.split('[defWidth]').join(getWindowsDimensions(programLocation + isIndex,"winX") + "px")
+	originalCode = originalCode.split('[defHeight]').join(getWindowsDimensions(programLocation + isIndex,"winY") + "px")
+	
+	originalCode = originalCode.split('[fixH]').join((parseInt(getWindowsDimensions(programLocation + isIndex,"winY"))-35) + "px")
+		
+
+	originalCode = originalCode.split('[defShWidth]').join(getWindowsDimensions(programLocation + isIndex,"winShX") + "px")
+	originalCode = originalCode.split('[defShHeight]').join(getWindowsDimensions(programLocation + isIndex,"winShY") + "px")
+
+	defWinLeft = parseInt(0.5*(window.innerWidth - defWinWidth))
+	defWinTop = parseInt(0.5*(window.innerHeight - defWinHeight))
+
+	originalCode = originalCode.split('[defX]').join(defWinLeft + "px")
+	originalCode = originalCode.split('[defY]').join(defWinTop + "px")
+	originalCode = originalCode.split('[defXf]').join((defWinLeft+800) + "px")
+	originalCode = originalCode.split('[defYf]').join((defWinTop+480) + "px")
+	originalCode = originalCode.split('[defShX]').join((defWinLeft-10) + "px")
+	originalCode = originalCode.split('[defShY]').join((defWinTop-10) + "px")
+	originalCode = originalCode.split('[HTMSRC]').join(escape(htmsrc) + "px")
+
+	if (detByCNT.indexOf('UNRESIZABLE=TRUE') != -1){
+		originalCode = originalCode.split('[isResizableX]').join("")
+		originalCode = originalCode.split('[isResizableY]').join("")
+		originalCode = originalCode.split('[isResizableXf]').join("")
+
+	} else {
+		originalCode = originalCode.split('[isResizableX]').join("; cursor: w-resize\" onmousedown=\"ddInit(this,'resizeX')")
+		originalCode = originalCode.split('[isResizableXf]').join("; cursor: w-resize\" onmousedown=\"ddInit(this,'resizeXf')")
+		originalCode = originalCode.split('[isResizableY]').join("; cursor: n-resize\" onmousedown=\"ddInit(this,'resizeY')")
+		originalCode = originalCode.split('[isResizableD1]').join("; cursor: ne-resize\" onmousedown=\"ddInit(this,'resizeD1')")
+		originalCode = originalCode.split('[isResizableD2]').join("; cursor: nw-resize\" onmousedown=\"ddInit(this,'resizeD2')")
+	}
+
+	if (FANSettings['Contemplat']['Basic'] == "Yes"){
+		originalCode = originalCode.split('[winStyleSheet]').join(file_passThru(hhome + "\\lib\\window\\resources\\basic.css"))
+	} else {
+		originalCode = originalCode.split('[winStyleSheet]').join(file_passThru(hhome + "\\lib\\window\\resources\\index.css"))
+	}
+	
+
+	if (FANSettings['Contemplat']['Make gradient horizontal'] == "Yes"){
+		originalCode = originalCode.split('[isHorizontal]').join(',gradientStyle=1')
+	} else {
+		originalCode = originalCode.split('[isHorizontal]').join('')
+	}
+
+	if (FANSettings['Contemplat']['Basic'] == "Yes"){
+		originalCode = originalCode.split('glassScreen.png').join(FANSettings['Contemplat']['Use theme'] + 'Screen.png')
+	}
+
+	if (FANSettings['Contemplat']['Shadow'] == "Yes"){
+		originalCode = originalCode.split('[isShadowActivated]').join('')
+	} else {
+		originalCode = originalCode.split('[isShadowActivated]').join('visibility: hidden; ')
+	}
+
+	originalCode = originalCode.split('[appTitle]').join(getHTMLTitle(programLocation + isIndex))
+
+	THESCR = document.createElement("DIV");
+	THESCR.innerHTML = originalCode.split('windowIndex="0"').join('windowIndex="'+document.getElementsByName('window').length+'"')
+
+	try {
+		 document.getElementsByName('desktopspace')[activeDesktop].appendChild(THESCR)
+	} catch (shittyBug) {
+		document.body.appendChild(THESCR)
+	}
+
+	curWin = parseInt(document.getElementsByName("window").length)-1
+	activateWindow(curWin)
+	elloryahFADEIN()
+
+}
+
+function bringTop(idn, numb){
+	document.getElementsByName(idn)[numb].style.top = parseInt(document.getElementsByName(idn)[numb].style.top)-3 + "px"
+}
+
+
+function elloryahFADEIN(){
+	//alert(document.getElementsByName("window").length)
+	curWin = parseInt(document.getElementsByName("window").length)-1
+
+	for (b = 0; b <= 10; b++){
+		setTimeout("document.getElementsByName('window')["+curWin+"].style.opacity = "+(b/10)+";", b*50)
+		setTimeout("document.getElementsByName('windowShadow')["+curWin+"].style.opacity = "+(b/10)+";", b*50)
+		setTimeout("document.getElementsByName('windowGlass')["+curWin+"].style.opacity = "+(b/10)+";", b*50)
+		setTimeout("document.getElementsByName('windowShine')["+curWin+"].style.opacity = "+(b/10)+";", b*50)
+
+		setTimeout("bringTop('window',"+curWin+"); bringTop('windowShadow',"+curWin+"); bringTop('windowShine',"+curWin+")", b*50)
+	}
+}
+
+
+function FANStartSpec(theSpec, arg){
+	if (isVirtualDesktopEnvironment()) parent.FANStart(theSpec,arg)
+	else FANStart(theSpec,arg)
+}
+
+
+function FANMax(theObj){
+	activeWin = document.getElementById('windowIndex').value
+	windowRighter()
+
+	while (theObj.id != "window"){
+		theObj = theObj.parentElement
+	}
+
+	theObj.style.top = theObj.style.left = "0px"
+
+	screenWidth = window.innerWidth
+	screenHeight = window.innerHeight
+
+	if (theObj.max != "true"){
+		theObj.style.width =  screenWidth
+
+		document.getElementsByName("windowShine")[activeWin].style.width = screenWidth + "px"
+		document.getElementsByName("windowShadow")[activeWin].style.width = parseFloat(screenWidth) + parseFloat(20) + "px"
+
+		maxH = parseFloat(screenHeight)
+
+		theObj.style.height = maxH
+		document.getElementsByName("windowShine")[activeWin].style.height = maxH + "px"
+
+		document.getElementsByName("windowShine")[activeWin].style.left = "0px"
+		document.getElementsByName("windowShine")[activeWin].style.top = "0px"
+
+		document.getElementsByName("windowShadow")[activeWin].style.top = document.getElementsByName("windowShadow")[activeWin].style.left = "-10px"
+		document.getElementsByName("windowShadow")[activeWin].style.height = parseFloat(screenHeight)+parseFloat(20) + "px"
+
+		document.getElementsByName('windowGlass')[activeWin].style.clip = "rect(auto auto auto auto)"
+
+		document.getElementsByName("shdw1")[activeWin].style.visibility = "hidden"
+		document.getElementsByName("shdw2")[activeWin].style.visibility = "hidden"
+		document.getElementsByName("shdw3")[activeWin].style.visibility = "hidden"
+		document.getElementsByName("shdw4")[activeWin].style.visibility = "hidden"
+
+		theObj.max = "true"
+
+	} else {
+
+		theObj.style.width = "800px"
+		document.getElementsByName("windowShadow")[activeWin].style.width = "820px"
+		theObj.style.height = "480px"
+		document.getElementsByName("windowShadow")[activeWin].style.height = "500px"
+		document.getElementsByName("windowShadow")[activeWin].style.top = document.getElementsByName("windowShadow")[activeWin].style.left = "0px"
+		document.getElementsByName("window")[activeWin].style.top = document.getElementsByName("window")[activeWin].style.left = "10px"
+
+		if (FANSettings['Contemplat']['Shadow'] == "Yes"){
+	
+			document.getElementsByName("shdw1")[activeWin].style.visibility = "visible"
+			document.getElementsByName("shdw2")[activeWin].style.visibility = "visible"
+			document.getElementsByName("shdw3")[activeWin].style.visibility = "visible"
+			document.getElementsByName("shdw4")[activeWin].style.visibility = "visible"
+
+		} else {
+
+			document.getElementsByName("windowShadow")[activeWin].style.visiblity = "hidden"
+
+		}
+
+		theObj.max = "false"
+	}
+
+}
+
+function FANAeroSnap(theObj, resizeT){
+	if (theObj.max == "true") return false
+
+	windowRighter()
+
+	screenWidth = window.innerWidth
+	screenHeight = window.innerHeight
+
+	winIndex = document.getElementById('windowIndex').value
+
+	if (document.getElementsByName('window').length > 1){
+		winRef = document.getElementsByName('window')[winIndex]
+		winShiRef = document.getElementsByName('windowShine')[winIndex]
+		winShaRef = document.getElementsByName('windowShadow')[winIndex]
+		winGlaRef = document.getElementsByName('windowGlass')[winIndex]
+	} else {
+		winRef = document.getElementById('window')
+		winShiRef = document.getElementById('windowShine')
+		winShaRef = document.getElementById('windowShadow')
+		winGlaRef = document.getElementById('windowGlass')
+	}
+
+
+
+	while (theObj.id != "window"){
+		theObj = theObj.parentElement
+	}
+
+
+	theObj.style.top = "0px"
+	winWidth = parseInt(screenWidth)/2
+	winShaRef.style.top = "-10px"
+
+	if (resizeT == "left"){
+		theObj.style.left = "0px"
+		winShaRef.style.left = "-10px"
+		cutA = Math.floor(window.innerWidth/2)
+		cutB = Math.floor((window.innerHeight) - 40)
+
+		winGlaRef.style.clip = "rect(0px "+cutA+"px "+cutB+"px 0px)"
+		winShiRef.style.left = "0px"
+
+	} else if (resizeT == "right"){
+		theObj.style.left = winWidth + "px"
+		winShaRef.style.left = parseInt(winWidth) - parseInt(10) + "px"
+
+		cutA = Math.floor(window.innerWidth/2)
+		cutB = Math.floor((window.innerHeight) - 40)
+
+		winGlaRef.style.clip = "rect(0px "+2*cutA+"px "+cutB+"px "+cutA+"px)"
+		winShiRef.style.left = cutA + "px"
+
+	}
+
+	theObj.style.width = winWidth + "px"
+	winShaRef.style.width = (parseFloat(winWidth)+parseFloat(20)) + "px"
+
+	theObj.style.height = (parseFloat(screenHeight) - parseFloat(FANSettings['Contemplat']['Taskbar Height'])) + "px"
+
+	winShaRef.style.height = (parseFloat(screenHeight)+parseFloat(20)-parseFloat(parseFloat(FANSettings['Contemplat']['Taskbar Height']))) + "px"
+	winShiRef.style.top = "0px"
+
+	winShiRef.style.width = cutA + "px"
+	
+
+}
+
+var ddrsXEnabled
+var ddrsYEnabled
+var ddrsXfEnabled
+var ddrsD1Enabled
+var ddrsD2Enabled
+var phDim
+var pwDim
+var windowFrameID
+
+function activateWindow(sidx){
+
+	if (sidx == undefined) sidx = 0
+
+	for (x=0;x<document.getElementsByName('window').length;x++){
+		if (parseInt(x) != parseInt(sidx)){
+			document.getElementsByName('window')[x].style.zIndex = parseFloat(1000)+parseFloat((x*4)+parseFloat(3))
+			document.getElementsByName('windowShine')[x].style.zIndex = parseFloat(1000)+parseFloat((x*4)+parseFloat(2))
+			document.getElementsByName('windowGlass')[x].style.zIndex = parseFloat(1000)+parseFloat((x*4)+parseFloat(1))
+			document.getElementsByName('windowShadow')[x].style.zIndex = parseFloat(1000)+parseFloat(x*4)
+		} else {
+			document.getElementsByName('window')[x].style.zIndex = 987654324
+			document.getElementsByName('windowShine')[x].style.zIndex = 987654323
+			document.getElementsByName('windowGlass')[x].style.zIndex = 987654322
+			document.getElementsByName('windowShadow')[x].style.zIndex = 987654321
+		}
+	}
+
+	activeWindow = sidx
+}
+
+function retrieveActiveWindow(){
+	actWin = -1
+	highestZIndex = -1
+	for (at = 0; at < document.getElementsByName('window').length; at++){
+		if (parseInt(document.getElementsByName('window')[at].style.zIndex) > highestZIndex){
+			highestZIndex = parseInt(document.getElementsByName('window')[at].style.zIndex)
+			actWin = at
+		}
+	}
+
+	return actWin
+}
+
+
+function ddInit(printScreen, opt){
+	windowRighter()
+
+	while (printScreen.id != "window" && printScreen.tagName != "BODY"){
+		printScreen = printScreen.parentElement
+	}
+
+	//alert(printScreen.sourceIndex)
+	document.getElementById('windowIndex').value = printScreen.getElementsByTagName("INPUT")[0].value
+
+	activeWin = document.getElementById('windowIndex').value
+	activateWindow(activeWin)
+
+	if (parseInt(windowFrameID.length) > 1) {
+		winRef = document.getElementsByName('window')[activeWin]
+		winShiRef = document.getElementsByName('windowShine')[activeWin]
+		winShaRef = document.getElementsByName('windowShadow')[activeWin]
+		winGlaRef = document.getElementsByName('windowGlass')[activeWin]
+	} else {
+		winRef = document.getElementById('window')
+		winShiRef = document.getElementById('windowShine')
+		winShaRef = document.getElementById('windowShadow')
+		winGlaRef = document.getElementById('windowGlass')
+	}
+
+
+	if (opt == undefined) opt = "move"
+
+	pwDim = parseInt(winRef.style.width)
+	phDim = parseInt(winRef.style.height)
+
+	//alert(document.getElementById('windowIndex').value)
+
+	if (printScreen.id == "window" && printScreen.max != "true"){
+		offsetx = event.clientX
+		offsety = event.clientY
+
+		nowX = parseInt(winRef.style.left);
+		nowY = parseInt(winRef.style.top);
+
+
+		if (opt == "move") ddEnabled = true
+		else if (opt == "resizeX") ddrsXEnabled = true
+		else if (opt == "resizeY") ddrsYEnabled = true
+		else if (opt == "resizeXf") ddrsXfEnabled = true
+		else if (opt == "resizeD1"){
+			ddrsXfEnabled = true
+			ddrsYEnabled = true
+		}
+		else if (opt == "resizeD2"){
+			ddrsXEnabled = true
+			ddrsYEnabled = true
+		}
+
+
+	}
+	windowRighter()
+	
+}
+ 
+function dd(){
+	if (event.button != 1) ddEnd()
+
+	if (ddEnabled){
+		activeWin = retrieveActiveWindow()
+ 
+		xPos = parseInt(nowX)+parseInt(event.clientX)-parseInt(offsetx)
+		yPos = parseInt(nowY)+parseInt(event.clientY)-parseInt(offsety)
+
+		if (parseInt(document.getElementsByName('window').length) > 1) {
+			winRef = document.getElementsByName('window')[activeWin]
+			winShiRef = document.getElementsByName('windowShine')[activeWin]
+			winShaRef = document.getElementsByName('windowShadow')[activeWin]
+			winGlaRef = document.getElementsByName('windowGlass')[activeWin]
+		} else {
+			winRef = document.getElementById('window')
+			winShiRef = document.getElementById('windowShine')
+			winShaRef = document.getElementById('windowShadow')
+			winGlaRef = document.getElementById('windowGlass')
+		}
+
+
+		winRef.style.left = xPos + "px"
+		winRef.style.top = yPos + "px"
+
+		winShiRef.style.left = xPos + "px"
+		winShiRef.style.top = yPos + "px"
+
+		winShaRef.style.left = (xPos - 10) + "px"
+		winShaRef.style.top = (yPos - 10) + "px"
+	
+
+		wDim = parseInt(winRef.style.width);
+		hDim = parseInt(winRef.style.height);
+		newX = parseInt(winRef.style.left);
+		newY = parseInt(winRef.style.top);
+
+		winShiRef.style.width = wDim + "px"
+		winShiRef.style.height = hDim + "px"
+
+
+		winShaRef.style.width = (wDim+20) + "px"
+		winShaRef.style.height = (hDim+20) + "px"
+		
+		winGlaRef.style.clip = "rect("+newY+"px "+(newX+wDim)+"px "+((newY+hDim))+"px "+newX+"px)"
+	
+
+	}
+
+	if (ddrsXEnabled){
+		defWid = parseInt(event.clientX)-parseInt(nowX)
+		if (parseInt(defWid) < 150) defWid = 150
+		winRef.style.width = parseInt(defWid) + "px"
+	}
+
+	if (ddrsXfEnabled){
+
+		defWid = parseInt(nowX)-parseInt(event.clientX)
+		winRef.style.width = (parseInt(defWid)+pwDim) + "px"
+	}
+
+	if (ddrsYEnabled){
+
+		defHei = parseInt(event.clientY)-parseInt(nowY)
+		if (parseInt(defHei) < 30) defHei = 150
+		winRef.style.height = parseInt(defHei) + "px"
+
+	}
+
+	if (ddrsXfEnabled || ddrsXEnabled || ddrsYEnabled){
+		wDim = parseInt(winRef.style.width);
+		hDim = parseInt(winRef.style.height);
+
+		xPos = parseInt(winRef.style.left) + "px"
+		yPos = parseInt(winRef.style.top) + "px"
+
+		winGlaRef.style.clip = "rect("+yPos+"px "+(xPos+wDim)+"px "+(yPos+hDim)+"px "+xPos+"px)"
+		winShaRef.style.width = (parseInt(winRef.style.width)+20) + "px"
+		winShaRef.style.height = (parseInt(winRef.style.height)+20) + "px"
+	
+		winShiRef.style.width = parseInt(winRef.style.width) + "px"
+		winShiRef.style.height = parseInt(winRef.style.height) + "px"
+
+		if (ddrsXfEnabled){
+			winRef.style.left = event.clientX + "px"
+			winShaRef.style.left = (parseFloat(winRef.style.left)-10) + "px"
+			winShiRef.style.left = parseFloat(winRef.style.left) + "px"
+
+		}	
+	}
+
+
+	fixCHeight()
+	windowRighter()
+
+}
+
+function ddEnd(opt){
+
+	ddEnabled = false
+	ddrsXEnabled = false
+	ddrsYEnabled = false
+	ddrsXfEnabled = false
+	ddrsD1Enabled = false
+	ddrsD2Enabled = false
+
+	try {
+
+		winWidth = parseFloat(document.getElementsByName('window')[activeWin].style.width)/2
+
+		if (parseFloat(document.getElementsByName('window')[activeWin].style.top) <= -5){
+			FANMax(document.getElementsByName('window')[activeWin])
+		} else if (parseFloat(document.getElementsByName('window')[activeWin].style.left) <= -1*parseInt(winWidth)){
+			FANAeroSnap(document.getElementsByName('window')[activeWin],"left")
+		} else if (parseFloat(document.getElementsByName('window')[activeWin].style.left) >= parseInt(window.innerWidth) - 2*parseInt(winWidth)){
+			FANAeroSnap(document.getElementsByName('window')[activeWin],"right")
+		}
+
+	} catch (err){}
+
+}
+
+function noError(attr){
+
+	try {
+		return attr
+	} catch (err){
+		return ""
+	}
+
+}
+
+function setActiveWin(deif){
+	document.getElementById('windowIndex').value = deif
+}
+
+
+//setInterval("windowRighter()", 1000)
+
+function windowRighter(){
+	windowFrameID = new Array()
+
+	//if (document.getElementById('windowContainer')) alert(document.getElementById('windowContainer').innerHTML)
+
+	if (isVirtualDesktopEnvironment() && document.getElementById('taskBar')){
+
+		gHT = "<table cellspacing=0 cellpadding=0><tr style='height: 40px'>"
+		isMultiple = ""
+
+		visibleCount = 0
+
+		for (x=0;x<document.getElementsByName('window').length;x++){
+			fromDesktop = document.getElementsByName('window')[x]
+
+			for (ib = 0; ib < Infinity; ib++){
+				try {
+					if (fromDesktop.id != "desktopspace"){
+						fromDesktop = fromDesktop.parentElement
+					} else {
+						break
+					}
+				
+				} catch (err){
+					fromDesktop = fromDesktop.parentElement
+					continue
+				}
+			}
+
+
+
+			if (fromDesktop.style.display == "inline"){
+				winIc = document.getElementsByName('windowIcon')[x].src
+				winLoc = baseName(conv2bar(document.frames[x].location.href).substring(0,document.frames[x].location.href.lastIndexOf('/')))
+
+				if (isMultiple.indexOf(winIc) == -1) gHT += "<td onclick='FANAlter("+x+")' width=50 align=center oncontextmenu=\"refWin = '"+winLoc.toUpperCase()+"'; shAppOpt()\" class=taskActive onmouseover=\"this.className = 'taskActiveH';\" onmouseout=\"this.className = 'taskActive'\"><img height=36 src='"+winIc+"'></td>"
+				isMultiple += winIc + " "
+				visibleCount++
+			}
+
+		}
+
+		if (document.getElementsByName('window').length == 0 || visibleCount == 0) gHT += "<td>&nbsp;</td>"
+		gHT += "</tr></table>"
+		taskBar.innerHTML = gHT
+
+
+	}
+
+	for (nx = 0; nx < document.getElementsByTagName('IFRAME').length; nx++){
+		indicattor = 0
+
+		try {
+
+			if (document.getElementsByTagName('IFRAME')[nx].id == "windowFrame") indicattor = 1
+			else indicattor = -1
+
+		} catch (err){
+			indicattor = -1
+		}
+
+
+		if (indicattor == 1) windowFrameID[windowFrameID.length] = nx
+	}
+
+	for (bx=0;bx<document.getElementsByName('window').length;bx++){
+
+		if (document.getElementsByName('window').length > 1){
+			wID = document.getElementsByName('windowContainer')[bx].getElementsByTagName("INPUT")[0]
+			winRe = document.getElementsByName('window')[bx]
+			winGlaRe = document.getElementsByName('windowGlass')[bx]
+			winShaRe = document.getElementsByName('windowShadow')[bx]
+			winShiRe = document.getElementsByName('windowShine')[bx]
+			winCRef = "" //document.getElementsByName('windowContemplat')[bx].filters("DXImageTransform.Microsoft.Gradient")
+		} else {
+
+			wID = document.getElementById('windowContainer').getElementsByTagName("INPUT")[0]
+			winRe = document.getElementById('window')
+			winGlaRe = document.getElementById('windowGlass')
+			winShaRe = document.getElementById('windowShadow')
+			winShiRe = document.getElementById('windowShine')
+			winCRef = "" //document.getElementById('windowContemplat').filters("DXImageTransform.Microsoft.Gradient")
+		}
+
+		wID.value = bx
+		document.getElementsByName('windowTitle')[bx].innerText = document.frames[windowFrameID[bx]].document.title
+
+		xPo = parseInt(winRe.style.left)
+		yPo = parseInt(winRe.style.top)
+		wDi = getObjDim("window",bx)[0]
+		hDi = getObjDim("window",bx)[1]
+
+
+
+		//if (document.getElementsByName('window')[x].max == "false" && (document.getElementsByName('window')[bx].collapsed == "false" || document.getElementsByName('window')[bx].collapsed == undefined)){
+			try {
+				document.getElementsByName('window')[bx].style.width = document.frames[windowFrameID[bx]].document.body.defWidth + "px"
+				document.getElementsByName('windowShadow')[bx].style.width = parseFloat(document.getElementsByName('window')[bx].style.width)+parseFloat(20) + "px"
+			} catch (err2){}
+
+
+			try {
+				document.getElementsByName('window')[bx].style.height = document.frames[windowFrameID[bx]].document.body.defHeight + "px"
+				document.getElementsByName('windowShadow')[bx].style.height = parseFloat(document.getElementsByName('window')[bx].style.height)+parseFloat(20) + "px"
+			} catch (err2){}
+		//}
+
+		try {
+			document.getElementsByName('windowContemplat')[bx].filters("DXImageTransform.Microsoft.Gradient").startColorstr = document.frames[windowFrameID[bx]].document.body.aeroColor1
+			document.getElementsByName('windowContemplat')[bx].filters("DXImageTransform.Microsoft.Gradient").endColorstr = document.frames[windowFrameID[bx]].document.body.aeroColor2
+		} catch (err){}
+
+		if (document.frames[windowFrameID[bx]].document.body.unresizable == "true"){
+			document.getElementsByName('rightwin')[bx].onmousedown = new Function("return false")
+			document.getElementsByName('rightwin')[bx].style.cursor = "normal"
+
+			document.getElementsByName('bottomwin')[bx].onmousedown = new Function("return false")
+			document.getElementsByName('bottomwin')[bx].style.cursor = "normal"
+
+		}
+
+
+		kerX = parseInt(xPo)-parseInt(document.getElementsByName('window')[0].style.left)
+		kerY = parseInt(yPo)-parseInt(document.getElementsByName('window')[0].style.top)
+
+		
+		winGlaRe.style.clip = "rect("+yPo+"px "+(xPo+wDi-kerX)+"px "+((yPo+hDi-kerY))+"px "+xPo+"px)"
+	}
+
+}
+
+function FANKill(theObj){
+	while (theObj.id != "window"){
+		theObj = theObj.parentElement
+	}
+
+	theObj.removeNode(true)
+
+	windowRighter()
+
+	activeWin = 0
+}
+
+function FANAlter(theObj){
+	sh = new Array(1,0)
+
+	visSet("windowShadow",theObj)
+	visSet("windowGlass",sh[visGet("window",theObj)],theObj)
+	visSet("window",sh[visGet("window",theObj)],theObj)
+	visSet("windowShine",sh[visGet("window",theObj)],theObj)
+}
+
+
+
+function FANCollapse(ind){
+	document.getElementsByName('window')[ind].style.visibility = "hidden"
+	document.getElementsByName('windowGlass')[ind].style.visibility = "hidden"
+	document.getElementsByName('windowShadow')[ind].style.visibility = "hidden"
+	document.getElementsByName('windowShine')[ind].style.visibility = "hidden"
+
+}
+
+function FANRestore(ind){
+	document.getElementsByName('window')[ind].style.visibility = "visible"
+	document.getElementsByName('windowGlass')[ind].style.visibility = "visible"
+	document.getElementsByName('windowShadow')[ind].style.visibility = "visible"
+	document.getElementsByName('windowShine')[ind].style.visibility = "visible"
+
+}
+
+function removeWinElements(ind){
+	document.getElementsByName('window')[ind].removeNode(true)
+	document.getElementsByName('windowGlass')[ind].removeNode(true)
+	document.getElementsByName('windowShadow')[ind].removeNode(true)
+	document.getElementsByName('windowShine')[ind].removeNode(true)
+
+	windowRighter()
+}
+
+function FANKillSpec(ind){
+	if (ind == undefined) ind = document.getElementById('windowIndex').value
+	event.cancelBubble = true
+
+
+	if (isTAKENAWA() == 1){
+		killWindow = newNTween(parseFloat(document.getElementsByName('window')[ind].style.top),-1000,20)
+
+		for (h = 0; h < 10; h++){
+			try {
+				setTimeout("document.getElementsByName('window')["+ind+"].style.top = '" + killWindow[h] + "px';", h*50)
+				setTimeout("document.getElementsByName('windowGlass')["+ind+"].style.display = 'none';", h*50)
+				setTimeout("document.getElementsByName('windowShine')["+ind+"].style.top = '" + killWindow[h] + "px';", h*50)
+				setTimeout("document.getElementsByName('windowShadow')["+ind+"].style.top = '" + (killWindow[h] - 10) + "px';", h*50)
+
+				setTimeout("document.getElementsByName('window')["+ind+"].style.opacity = "+((10-h)/10)+";", h*50)
+				setTimeout("document.getElementsByName('windowShadow')["+ind+"].style.opacity = "+((10-h)/10)+";", h*50)
+				setTimeout("document.getElementsByName('windowGlass')["+ind+"].style.opacity = "+((10-h)/10)+";", h*50)
+				setTimeout("document.getElementsByName('windowShine')["+ind+"].style.opacity = "+((10-h)/10)+";", h*50)
+
+
+			} catch (err){}
+		}
+
+		getHTMsrc = unescape(event.srcElement.htmsrc)
+
+
+		setTimeout("removeWinElements("+ind+")", 1100)
+
+	} else removeWinElements(ind)
+
+
+
+}
+
+function FANKillPage(someStr, isM){
+
+	windowFrameID = new Array()
+
+	for (x = 0; x < document.getElementsByTagName('IFRAME').length; x++){
+		indicattor = 0
+
+		try {
+
+			if (document.getElementsByTagName('IFRAME')[x].id == "windowFrame") indicattor = 1
+			else indicattor = -1
+
+		} catch (err){
+			indicattor = -1
+		}
+
+
+		if (indicattor == 1) windowFrameID[windowFrameID.length] = x
+
+
+	}
+
+	for (dx=0;dx<document.getElementsByName('window').length;dx++){
+
+		if (unescape(conv2bar(document.frames[windowFrameID[dx]].location.href)).toUpperCase().indexOf(conv2bar(unescape(someStr)).toUpperCase()) != -1){
+			FANKillSpec(dx)
+			bx--
+			if (isM == 1) dx = 0
+			else dx = Infinity
+
+
+/*
+			document.getElementsByName('window')[bx].removeNode(true)
+			document.getElementsByName('windowGlass')[bx].removeNode(true)
+			document.getElementsByName('windowShine')[bx].removeNode(true)
+			document.getElementsByName('windowShadow')[bx].removeNode(true)
+			
+
+
+*/
+		}
+	}
+
+	windowRighter()
+
+}

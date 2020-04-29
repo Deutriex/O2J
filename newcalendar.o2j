@@ -1,0 +1,55 @@
+Date.prototype.toNewCalendar = function(frm){
+	dtObj = this
+	mezi = []
+	mezi.push("Scorpio")
+	mezi.push("Sagittarius")
+	mezi.push("Capricorn")
+	mezi.push("Aquarius")
+	mezi.push("Pisces")
+	mezi.push("Aries")
+	mezi.push("Taurus")
+	mezi.push("Gemini")
+	mezi.push("Cancer")
+	mezi.push("Leo")
+	mezi.push("Virgo")
+	mezi.push("Libra")
+
+	gotYear = dtObj.getFullYear() - 1956
+	if (dtObj.getMonth() < 9 || (dtObj.getMonth() == 9 && dtObj.getDate() < 23)) gotYear--;
+
+
+	greg2new = 		[4,  5,  6,  7,  8,  9,  10, 11, 12, 1,  2,  3]
+	dayThreshold =	[20, 19, 20, 20, 21, 20, 23, 23, 23, 23, 22, 21]
+	deltaTh = 		[11, 9,  11, 10, 10, 10, 8,  8,  7,  8,  8,  10]
+				//	 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+
+	gotMonth = greg2new[dtObj.getMonth()]
+	downgradedMonth = false
+	if (dtObj.getDate() < dayThreshold[dtObj.getMonth()]){
+		gotMonth = (gotMonth-1+12)%12
+		if (gotMonth == 0) gotMonth = 12
+		downgradedMonth = true
+	}
+
+	if (dtObj.getFullYear()%400 == 0 || (dtObj.getFullYear()%4 == 0 && dtObj.getFullYear()%100 != 10)){
+		deltaTh[1]++
+	}
+
+	gotDay = 1
+	if (!downgradedMonth){
+		gotDay = (dtObj.getDate() - dayThreshold[dtObj.getMonth()]) + 1
+	} else {
+		gotDay = deltaTh[(dtObj.getMonth() - 1 + 12)%12] + dtObj.getDate() + 1
+	}
+
+
+	if (gotMonth < 10 && frm != 1) gotMonth = "0" + gotMonth
+	if (gotDay < 10) gotDay = "0" + gotDay
+
+	if (frm == 1){
+		gotMonth = mezi[gotMonth-1].substring(0, 3).toUpperCase()
+	}
+
+
+	return gotYear + "/" + gotMonth + "/" + gotDay	
+}

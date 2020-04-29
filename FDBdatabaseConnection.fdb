@@ -1,0 +1,7 @@
+function FDBConnection(dbAddr){
+	var FDBArray = new Array()
+	var FDBArrayName = new Array()
+
+		
+
+}

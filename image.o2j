@@ -1,0 +1,98 @@
+function color(){
+	var pxRed = 0
+	var pxGreen = 0
+	var pxBlue = 0
+	var thisColor = "#000000"
+
+
+	hex2dec = function(hexchar){
+		 return parseInt(hexchar, 16)
+	}
+
+	dec2hex = function(decchar){
+		var hexValue = decchar.toString(16)
+		if (decchar < 16) hexValue = "0" + hexValue
+		return hexValue.toUpperCase()
+	}
+
+
+	if (arguments.length == 1 && arguments[0].charAt(0) == "#"){
+		pxRed = hex2dec(arguments[0].substring(1,2))
+		pxGreen = hex2dec(arguments[0].substring(3,4))
+		pxBlue = hex2dec(arguments[0].substring(5,6))
+		thisColor = arguments[0]
+	} else if (
+		   arguments.length == 3
+		&& !isNaN(arguments[0])
+		&& !isNaN(arguments[1])
+		&& !isNaN(arguments[2])
+		&& (arguments[0] >= 0 && arguments[0] <= 255)
+		&& (arguments[1] >= 0 && arguments[1] <= 255)
+		&& (arguments[2] >= 0 && arguments[2] <= 255)
+	) {
+		pxRed = arguments[0]
+		pxGreen = arguments[1]
+		pxBlue = arguments[2]
+		thisColor = "#" + dec2hex(pxRed) + dec2hex(pxGreen) + dec2hex(pxBlue)
+	}
+
+	this.toString = function(){
+		return thisColor
+	}
+
+	this.inRGB = function(){
+		return "RGB(" + pxRed + ", " + pxGreen + ", " + pxBlue + ")"
+	}
+
+	this.inHSL = function(){
+		r = pxRed/255
+		g = pxGreen/255
+		b = pxBlue/255
+
+		var max = Math.max(r, g, b)
+		var min = Math.min(r, g, b);
+		var h, s 
+		var l = (max + min) / 2;
+
+		if (max == min){		
+			h = 0
+			s = 0 // achromatic
+		} else {
+			var d = max - min;
+			s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+			switch(max){
+				case r: h = (g - b) / d + (g < b ? 6 : 0); break;		
+				case g: h = (b - r) / d + 2; break;	
+				case b: h = (r - g) / d + 4; break;
+        		}	
+			h /= 6
+		}
+
+
+		return "HSL(" + parseInt(h*240) +  ", " + parseInt(s*240) + ", " + parseInt(l*255*16) + ")"
+	}
+
+	this.setHue = function(){
+	}
+	
+	this.setSaturation = function(){
+	}
+
+	this.setLuminosity = function(){
+	}
+
+
+}
+
+function image(dimX, dimY){
+	var o2jImage = new Array()
+
+	for (o2jLoop = 0; o2jLoop < dimY; o2jLoop++){
+		o2jImage.push(new Array())
+		for (o2jLoop2 = 0; o2jLoop2 < dimx; o2jLoop2++){
+		
+			o2jImage[dimY].push(new color("#000000"))
+		}
+	}
+
+}

@@ -1,0 +1,69 @@
+function MSExcelSheet(xlsAddr){
+	this.newMethod = file
+	this.newMethod(xlsAddr)
+
+	var ExcelApp = new ActiveXObject("Excel.Application")
+	var ExcelSheet = new ActiveXObject("Excel.Sheet")
+	ExcelApp.DisplayAlerts = false
+	
+	//ExcelSheet.Application.Visible = false
+
+	var thisLine = ""
+	var thisCol = ""
+
+	this.open = function(){
+		if (ExcelApp != null){
+                        Book = ExcelApp.workbooks.open(xlsAddr)
+			ExcelSheet = Book
+        	}
+	}
+
+	function letter2number(colLet){
+
+		if (typeof colLet != "string") return colLet
+
+		calcNumber = 0
+		alphabet = " ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		
+		for (ert = 0; ert < colLet.length; ert++){
+			lastErt = colLet.length-ert-1
+
+			calcNumber += Math.pow(26,ert)*alphabet.indexOf(colLet.charAt(lastErt))
+		}
+
+
+		return calcNumber
+	}
+
+
+	this.selectCell = function(xlLine, col){
+		if (col < 1 || xlLine.toUpperCase() == xlLine.toLowerCase()){
+			throw new Error('Endreço de célula inválida: ' + xlLine + col)
+		}
+
+		thisLine = letter2number(xlLine)
+		thisCol = col
+	}
+
+	this.getActiveCellContent = function(){
+
+		return ExcelSheet.ActiveSheet.Cells(thisCol, thisLine).Value
+	}
+
+
+	this.setActiveCellContent = function(newContent){
+		ExcelSheet.ActiveSheet.Cells(thisCol, thisLine).Value = newContent
+	}
+
+	this.save = function(){
+		ExcelSheet.Save()
+	}
+
+	this.createFile = function(){
+		ExcelSheet.SaveAs(xlsAddr)
+	}
+
+	this.close = function(){
+		ExcelSheet.Application.Quit()
+	}
+}

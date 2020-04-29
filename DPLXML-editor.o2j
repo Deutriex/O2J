@@ -1,0 +1,174 @@
+var DPLXMLTempObject = new (function(){
+	var searchNode = function(dplxmlobj, addrPath, varParam){
+		curObj = dplxmlobj.TESTMETHOD()
+		lastObj = dplxmlobj.TESTMETHOD()
+		
+		itC = 0
+		for (elem in addrPath){
+			if (addrPath.hasOwnProperty(elem) && curObj !== undefined && elem != ""){
+				lastObj = curObj
+				curObj = curObj[addrPath[elem]]
+				itC++
+			}
+		}
+		
+		if (varParam === "lastObj" && curObj === undefined){
+			return lastObj
+		}
+		
+		if (varParam === "processedIt" && curObj === undefined){
+			return itC-1
+		}
+		
+		return curObj
+	}
+
+	DPLXMLobject.prototype.setAttribute = function(addrPath, newValue){
+		if (addrPath.lastIndexOf(' > ') != -1){
+			attrName = addrPath.substring(addrPath.lastIndexOf(' > ') + 3)
+			addrPath = addrPath.substring(0, addrPath.lastIndexOf(' > '))
+		} else {
+			attrName = addrPath
+			addrPath = ""
+		}
+		
+		addrPath = addrPath.split(" > ")
+		if (addrPath.length == 1 && addrPath[0].length == 0) addrPath = []
+		
+		
+		curObj = searchNode(this, addrPath)
+		curObj[attrName] = newValue
+	}
+	
+	DPLXMLobject.prototype.deleteAtrribute = function(addrPath){
+		if (addrPath.lastIndexOf(' > ') != -1){
+			attrName = addrPath.substring(addrPath.lastIndexOf(' > ') + 3)
+			addrPath = addrPath.substring(0, addrPath.lastIndexOf(' > '))
+		} else {
+			attrName = addrPath
+			addrPath = ""
+		}
+
+		addrPath = addrPath.split(" > ")
+		if (addrPath.length == 1 && addrPath[0].length == 0) addrPath = []
+		
+		curObj = searchNode(this, addrPath)
+		delete curObj[attrName]
+	}
+
+	
+	DPLXMLobject.prototype.addAttribute = function(addrPath, newValue){
+		if (addrPath.lastIndexOf(' > ') != -1){
+			attrName = addrPath.substring(addrPath.lastIndexOf(' > ') + 3)
+			addrPath = addrPath.substring(0, addrPath.lastIndexOf(' > '))
+		} else {
+			attrName = addrPath
+			addrPath = ""
+		}
+
+		addrPath = addrPath.split(" > ")
+		if (addrPath.length == 1 && addrPath[0].length == 0) addrPath = []
+		
+		lastObj = searchNode(this, addrPath, "lastObj")
+		curObj = searchNode(this, addrPath)
+		
+		if (curObj == lastObj){
+			if (newValue !== undefined){
+				curObj[attrName] = newValue
+			} else {
+				curObj[attrName] = []
+			}
+		} else {
+			procNum = searchNode(this, addrPath, "processedIt")
+			lastObj[addrPath[procNum]] = []
+			
+			while (procNum--){
+				addrPath.shift()
+			}
+			
+			veryLastObj = lastObj
+			
+			for (elem in addrPath){
+				if (addrPath.hasOwnProperty(elem) && lastObj !== undefined){
+					veryLastObj = lastObj
+					lastObj = lastObj[addrPath[elem]]
+					
+					if (lastObj === undefined){
+						veryLastObj[addrPath[elem]] = []
+						lastObj = veryLastObj[addrPath[elem]]
+					}
+				}
+			}
+			
+			if (newValue !== undefined){
+				lastObj[attrName] = newValue
+			} else {
+				lastObj[attrName] = []
+			}
+			
+		}
+	}
+
+	DPLXMLobject.prototype.renameAttribute = function(addrPath, newName){
+		if (addrPath.lastIndexOf(' > ') != -1){
+			attrName = addrPath.substring(addrPath.lastIndexOf(' > ') + 3)
+			addrPath = addrPath.substring(0, addrPath.lastIndexOf(' > '))
+		} else {
+			attrName = addrPath
+			addrPath = ""
+		}
+		
+		addrPath = addrPath.split(" > ")
+		if (addrPath.length == 1 && addrPath[0].length == 0) addrPath = []
+		
+		curObj = searchNode(this, addrPath)	
+		curObj[newName] = curObj[attrName]
+		delete curObj[attrName]
+	}
+	
+	DPLXMLobject.prototype.sortAttributesWithin = function(addrPath){
+		if (addrPath.lastIndexOf(' > ') != -1){
+			attrName = addrPath.substring(addrPath.lastIndexOf(' > ') + 3)
+			addrPath = addrPath.substring(0, addrPath.lastIndexOf(' > '))
+		} else {
+			attrName = addrPath
+			addrPath = ""
+		}
+		
+		addrPath = addrPath.split(" > ")
+		if (addrPath.length == 1 && addrPath[0].length == 0) addrPath = []
+		
+		curObj = searchNode(this, addrPath)
+		lastObj = searchNode(this, addrPath, "lastObj")
+		
+		recordsToBeSorted = []
+		
+		for (arrElem in curObj[attrName]){
+			if (curObj[attrName].hasOwnProperty(arrElem)){
+				recordsToBeSorted.push(arrElem)
+			}
+		}
+		
+		recordsToBeSorted.sort()
+		
+		
+		
+		for (arrElem in recordsToBeSorted){
+			if (recordsToBeSorted.hasOwnProperty(arrElem)){
+				recordsToBeSorted[recordsToBeSorted[arrElem]] = curObj[attrName][recordsToBeSorted[arrElem]]
+				delete recordsToBeSorted[arrElem]
+			}
+		}
+		
+		delete curObj[attrName]
+		curObj[attrName] = recordsToBeSorted
+		
+	}
+	
+	DPLXMLobject.prototype.save = function(){
+		return dump(this.TESTMETHOD(), "DPLXML")
+	}
+	
+})()
+
+delete DPLXMLTempObject

@@ -1,0 +1,728 @@
+function FSObject(addr, objType){
+	AbstractClass.apply(this, [FSObject])
+
+	var winExplorer = new ActiveXObject("Scripting.FileSystemObject")
+	var winShell = new ActiveXObject("WScript.Shell")
+	var addr = addr.convertToSlashes()
+
+
+/*	addrArray = addr.split("\\")
+	if (addrArray.indexOf('..') != -1){
+		//alert(addrArray)
+		while (addrArray.indexOf('..') != -1){
+			addrArray.annihilate(addrArray.indexOf('..')-1)
+		}
+		//alert(addrArray)
+	}
+*/
+
+	getEnvironmentVariable = /\x25[a-zA-Z]+\x25/im
+	while (getEnvironmentVariable.test(addr)){
+		getEnvironmentVariableMatch = addr.match(getEnvironmentVariable)
+		getEnvironmentVariableMatchTrans = winShell.ExpandEnvironmentStrings(getEnvironmentVariableMatch[0])
+		addr = addr.replace(getEnvironmentVariable, getEnvironmentVariableMatchTrans)
+	}
+	
+
+	if (addr.indexOf(':') == -1){
+		addr = program.getPath().convertToSlashes() + "\\" + addr
+	}
+
+
+	this.getPath = function(){
+		return addr.convertToBar()
+	}
+
+	this.exists = function(){
+		if (objType == "file") return winExplorer.FileExists(addr)
+		if (objType == "folder") return winExplorer.FolderExists(addr)
+	}
+
+	this.getObject = function(){
+		if (this.exists()){
+			if (objType == "file")  return winExplorer.GetFile(addr)
+			else if (objType == "folder") return winExplorer.GetFolder(addr)
+			else return undefined
+		} else return undefined
+	}
+
+
+	this.parentObject = function(){
+		if (this.getObject()) return new folder(this.getObject().ParentFolder)
+		return new folder(addr.substring(0, addr.lastIndexOf('\\')))
+	}
+
+	this.objType = function(){
+		return objType
+	}
+
+
+	this.getDateLastModified = function(){
+		if (this.exists()){
+			getObj = this.getObject()
+			return new String(getObj.DateLastModified)
+		} else return undefined
+	}
+
+
+	this.getSize = function(meth){
+
+		if (this.exists()) getObj = this.getObject()
+		else return -1
+
+		if (getObj){
+			var valueOfCalcuStd = new Array()
+			valueOfCalcuStd['SI'] = 1000
+			valueOfCalcuStd['IEC'] = 1024
+
+			byteLevelNames = new Array()
+			byteLevelNames['IEC'] = ["Bytes","KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB"]
+			byteLevelNames['SI'] = ["Bytes","KB","MB","GB","TB","PB","EB","ZB","YB"]
+			byteLevelNames['SIext'] = ["Bytes","kilobytes","megabytes","gigabytes","terabytes","petabytes","exabytes","zettabytes","yottabytes"]
+			byteLevelNames['IECext'] = ["Bytes","kibibytes","megabibytes","gigabytes","terabibytes","petabibytes","exabibytes","zettabibytes","yottabibytes"]
+
+
+			byteLevel = 0
+			fsize = getObj.size
+
+			if (meth){
+				for (c=0;c<1;c++){
+					if (fsize >= valueOfCalcuStd[meth.fullReplace('ext','')]){
+						fsize = fsize/valueOfCalcuStd[meth.fullReplace('ext','')]
+						byteLevel++
+						c = -1
+					} else break
+				}
+
+				if (byteLevel > 0){
+					fsize = parseFloat(0.01)+parseFloat(fsize)
+					fsize = new String(fsize)
+					fsize = fsize.substring(0, fsize.indexOf('.')+3)
+					fsize = fsize.fullReplace('.',',')
+				}
+
+				if (fsize < 2 && meth.indexOf('ext') != -1) byteLevelNames[meth][byteLevel].deleteLastChar()
+
+				return fsize + " " + byteLevelNames[meth][byteLevel]
+
+			} else return fsize
+		
+
+		} else return -1
+
+	}
+
+
+	this.exclude = function(){
+		if (this.exists()){
+			try {
+				if (objType == "file") winExplorer.DeleteFile(addr)
+				if (objType == "folder") winExplorer.DeleteFolder(addr)
+				return true
+			} catch (exp){
+				return false
+			}
+		}
+		return false
+	}
+
+	this.rename = function(newName){
+		if (this.exists()){
+			try {
+				getObj = this.getObject()
+				getObj.Copy(newName, true)
+				this.exclude()
+				addr = newName.convertToSlashes()
+				return true
+			} catch (exp){
+				return false
+			}
+		} else return undefined
+	}
+
+	this.baseName = function(){
+		sc = addr.convertToBar()
+		if (sc.charAt(sc.length-1) == "/") sc = sc.deleteLastChar()
+
+		sc = sc.getSubstring('/','last')
+
+		if (arguments[0] != 1 && arguments[0] != true && sc.indexOf('.') != -1){
+			sc = sc.substring(0, sc.lastIndexOf('.'))
+		}
+
+		return sc
+	}
+
+	this.move = function(newLocation){
+		newLocation = newLocation.convertToSlashes()
+		if (this.exists()){
+			try {
+				if (objType == "file") winExplorer.MoveFile(addr, newLocation)
+				if (objType == "folder") winExplorer.MoveFolder(addr, newLocation)
+				addr = newLocation
+				return true
+			} catch (err){
+				return false
+			}
+		} else {
+			return false
+		}
+		return false
+	}	
+}
+
+
+function file(addr){
+	var addr = new String(addr)
+	this.newMethod = FSObject
+	this.newMethod(addr,"file")
+
+	var winExplorer = new ActiveXObject("Scripting.FileSystemObject")
+
+	this.isBinary = function(){
+		if (!this.exists()) return null
+		if (!this.getSize()) return null
+
+		openFile = winExplorer.OpenTextFile(addr,1,true)
+		readFile = new String(openFile.ReadAll()).substring(0,1023)
+		openFile.close()
+
+		for (mz = 0; mz < readFile.length; mz++){
+			if (readFile.charCodeAt(mz) == 0) return true
+		}
+
+		return false		
+	}
+
+
+	this.getExtension = function(){
+		if (addr.indexOf('.') != -1) return addr.getSubstring('.','last')
+		else return ""
+	}
+
+	this.toString = function(){
+		return "[O2J Object FSObject -> file]"
+	}
+}
+
+var fileArray = new (function(){
+	var openedFiles = []
+	var saveCount = 0
+	var cachedFilesCount = 0
+
+	var passThru_p = function(fileObj_p){
+		if (!(fileObj_p instanceof textfile)) throw new Error('Is not an O2J textfile object')
+		if (!fileObj_p.exists()) return ""
+		if (fileObj_p.getSize() <= 0) return ""
+
+			
+		var winExplorer = new ActiveXObject("Scripting.FileSystemObject")
+
+		openFile = winExplorer.OpenTextFile(fileObj_p.getPath().convertToSlashes(),1,true)
+		readFile = new String(openFile.ReadAll())
+		openFile.close()
+		
+		return readFile
+		
+	}
+
+	this.getFileContent = function(fileObj){
+		if (!(fileObj instanceof textfile)) throw new Error('Is not an O2J textfile object')
+
+		formatFileName = new String(fileObj.getPath()).fullReplace("\\","/")
+		var returnString = ""
+
+		if (fileObj.exists() && (openedFiles[formatFileName] === undefined || fileObj.getDateLastModified() != openedFiles[formatFileName].dateLastModified)){
+
+			newObj = {
+				dateLastModified: "" + fileObj.getDateLastModified(),
+				content: "" + passThru_p(fileObj)
+			}
+
+
+			if (openedFiles[formatFileName]){
+				cachedFilesCount++
+			}
+			
+			openedFiles[formatFileName] = newObj
+			returnString = "" + openedFiles[formatFileName].content
+
+
+
+		} else if (!fileObj.exists() && openedFiles[formatFileName] !== undefined){
+
+			delete openedFiles[formatFileName]
+			cachedFilesCount--
+
+		} else {
+
+			returnString = "" + openedFiles[formatFileName].content
+			saveCount++
+
+		}
+
+		return returnString
+	}
+
+	this.getSaveCount = function(){
+		return saveCount
+	}
+
+	this.getCachedFilesCount = function(){
+		return cachedFilesCount
+	}
+	
+})()
+
+function binaryfile(addr){
+	var addr = new String(addr)
+	this.newMethod = file
+	this.newMethod(addr)
+
+	var binaryGate = new ActiveXObject("ADODB.Stream")
+	binaryGate.Type = 1
+
+	this.create = function(binArray){
+		binaryGate.Open()
+		binaryGate.Write(binArray)
+		binaryGate.SaveToFile(addr, 2)
+		binaryGate.Close()
+	}
+	
+}
+
+
+function textfile(addr){
+	var addr = new String(addr)
+	this.newMethod = file
+	this.newMethod(addr)
+
+	var openedFile
+	var winExplorer = new ActiveXObject("Scripting.FileSystemObject")
+
+	this.readLine = function(){
+		if (!this.exists()) return false
+		if (!this.getSize()) return false
+
+		if (!openedFile){
+			openedFile = winExplorer.OpenTextFile(addr,1,true)
+		}
+
+		if (!openedFile.AtEndOfStream){
+			return openedFile.ReadLine()
+    		} else openedFile.Close()		
+	}
+
+	this.passThru = function(){
+		try {
+			return fileArray.getFileContent(this)
+		} catch (err){
+			alert(this.getPath() + " - Erro inesperado")
+		}
+	}
+
+	this.append = function(newContent){
+		openFile = winExplorer.OpenTextFile(addr,8,true)
+		openFile.WriteLine(newContent)
+		openFile.Close()
+	}
+
+	this.create = function(textContent, keepLocked, unicodeMode){
+		try {
+			if (!unicodeMode) unicodeMode = 0
+			openedFile = winExplorer.CreateTextFile(addr, true, unicodeMode) 
+			openedFile.Write(new String(textContent))
+			if (!keepLocked) openedFile.Close()
+			return true
+		} catch (exp){
+			return false
+		}
+	}
+
+	this.close = function(){
+		try {
+			openedFile.Close()
+			return true
+		} catch (err){
+			return false
+		}
+	}
+
+	this.toString = function(){
+		return "[O2J Object FSObject -> file -> textfile]"
+	}
+}
+
+/*
+	var objStream = new ActiveXObject("ADODB.Stream")
+	objStream.CharSet = "utf-8"
+	objStream.Open
+	objStream.LoadFromFile(home + "\\settings.dtx2")
+	strData = objStream.ReadText()
+	
+	function newSave(filer, textr){
+
+	}
+*/
+
+function unicodetextfile(addr){
+	var addr = new String(addr)
+	this.newMethod = file
+	this.newMethod(addr)
+
+	var testeXX = new ActiveXObject("ADODB.Stream")
+	testeXX.CharSet = "utf-8"
+
+	
+	this.passThru = function(){
+		testeXX.Open
+		testeXX.LoadFromFile(addr)
+		readThis = testeXX.ReadText()
+		testeXX.Close
+		
+		return readThis
+	}
+
+	this.close = function(){
+		try {
+			openedFile.Close
+			return true
+		} catch (err){
+			return false
+		}
+	}
+	
+	this.save = function(txt){
+		testeXX.Open
+		testeXX.WriteText(txt)
+		testeXX.SaveToFile(addr, 2)	
+		testeXX.Close
+	}
+
+	
+	
+	this.toString = function(){
+		return "[O2J Object FSObject -> file -> unicodetextfile]"
+	}
+}
+
+
+
+function folder(addr){
+	var addr = new String(addr)
+	var setThisFolder
+	var getI
+
+	this.newMethod = FSObject
+	this.newMethod(addr,"folder")
+
+	var winExplorer = new ActiveXObject("Scripting.FileSystemObject")
+
+
+	if (winExplorer.FolderExists(addr)){
+		setThisFolder = winExplorer.getFolder(addr)
+	}
+
+	this.create = function(){
+		try {
+			winExplorer.CreateFolder(addr)
+			return true
+		} catch (exp){
+			return false
+		}
+	}
+
+	
+	this.fileList = function(fileRestrictions){
+
+		if (!winExplorer.FolderExists(addr)) return false
+
+		var gotI = []
+
+		//try {
+
+			getI = setThisFolder
+			var dynamicLogic = []
+			var getFile = new Enumerator(getI.files)
+			var itAddr = ""
+			var gEx = ""
+
+
+			if (fileRestrictions){
+				fileRestrictions = new String(fileRestrictions)
+				fileRestrictions = fileRestrictions.split(', ')
+	
+				for (x1 = 0; x1 < fileRestrictions.length; x1++){
+					dynamicLogic.push("gEX == '" + fileRestrictions[x1].toUpperCase() + "'")
+				}
+			
+			}
+
+	
+			dynamicLogic = dynamicLogic.join(" || ")
+
+			for (; !getFile.atEnd(); getFile.moveNext()){
+				var itAddr = new String(getFile.item())
+	
+				var gEX = itAddr.getSubstring('\\','last').getSubstring('.','last').toUpperCase()
+	
+				if (!fileRestrictions || (fileRestrictions && eval(dynamicLogic))){
+					//testThisFile = new file(itAddr)
+					//if (testThisFile.isBinary()) gotI.push(new file(itAddr))
+					//else gotI.push(new textfile(itAddr))
+					gotI.push(itAddr)
+				}
+			}
+
+		//} catch (err){}
+		return gotI
+	}
+
+	this.folderList = function(){
+		sayMeFo = addr.getSubstring('*')
+		gotIt = new Array()
+		if (sayMeFo.charAt(sayMeFo.length-1) == ":") sayMeFo += "\\"
+
+	
+		//try {
+			getIt = winExplorer.getFolder(sayMeFo.decode().convertToSlashes())
+
+			dynamicLogic = []
+
+			getFi = new Enumerator(getIt.subfolders)
+
+			for (; !getFi.atEnd(); getFi.moveNext()){
+				gotIt.push(new folder(getFi.item()))
+			}
+		//} catch (her){}
+
+		return gotIt
+	}
+
+	this.getAllFiles = function(fileRestrictions3){
+		gotItems = []
+		processSubitems = []
+		dynamicLogic = ""
+
+		sayMeTheFolder = this.getPath()
+
+		getItems = new folder(sayMeTheFolder) //windowsExplorer.getFolder(sayMeTheFolder)
+		gotItems = getItems.fileList(fileRestrictions3) //getFolderFiles(sayMeTheFolder,fileRestrictions3)
+		processSubitems = getItems.folderList() //getFolderFolders(sayMeTheFolder)
+
+
+		while (parseInt(processSubitems.length) > 0){
+
+			processSubitems_2 = []
+
+			for (x = 0; x < processSubitems.length; x++){
+
+				getThesesFolders = processSubitems[x]
+				getFiles = getThesesFolders.fileList(fileRestrictions3)
+				getFolders = getThesesFolders.folderList()
+
+				gotItems = gotItems.concat(getFiles)
+				processSubitems_2 = processSubitems_2.concat(getFolders)
+
+			}
+
+			processSubitems = processSubitems_2
+				
+		}
+
+		return gotItems
+	}
+
+
+	this.toString = function(){
+		return "[O2J Object FSObject -> folder]"
+	}
+}
+
+function drive(getLetter){
+	this.newMethod = FSObject
+	this.newMethod(getLetter,"drive")
+
+	var winExplorer = new ActiveXObject("Scripting.FileSystemObject")
+	var gDrive = winExplorer.GetDrive(getLetter)
+
+	this.isReady = function(){
+		return gDrive.isReady
+	}
+
+	this.getDriveType = function(){
+	/*
+	      Case 0: t = "Unknown"
+	      Case 1: t = "Removable"
+	      Case 2: t = "Fixed"
+	      Case 3: t = "Network"
+	      Case 4: t = "CD-ROM"
+	      Case 5: t = "RAM Disk"
+	*/
+
+		return gDrive.DriveType
+	}
+
+	this.getAvailableSpace = function(){
+		return gDrive.AvailableSpace
+	}
+
+	this.getTotalSpace = function(){
+		return gDrive.TotalSpace
+	}
+
+	this.getFileSystem = function(){
+		return gDrive.FileSystem
+	}
+
+	this.getVolumeName = function(){
+		return gDrive.getVolumeName
+	}
+}
+
+
+function abstractExecutable(addr){
+	AbstractClass.apply(this, [abstractExecutable])
+	this.newMethod = file
+	this.newMethod(addr)
+
+	var winShellAE = new ActiveXObject("WScript.Shell")
+	if (this.parentObject().exists()){
+		winShellAE.CurrentDirectory = this.parentObject().getPath().convertToSlashes()
+	}
+
+
+	this.run = function(mde){
+		try {
+			winShellAE.run(this.baseName(1), mde)
+		} catch (altMethod) {
+			winShellAE.run(this.getPath().convertToSlashes(), mde)
+		}
+	}
+
+	this.exec = function(){
+		try {
+			winShellAE.exec(this.baseName(1))
+		} catch (altMethod) {
+			winShellAE.exec(this.getPath().convertToSlashes())
+		}
+	}
+}
+
+function executable(addr){
+	this.newMethod = abstractExecutable
+	this.newMethod(addr)
+
+	var winShellApp = new ActiveXObject("Shell.Application");
+	var wFolder57 = winShellApp.Namespace(this.parentObject().getPath());
+	if (wFolder57) {
+		var wFile = wFolder57.ParseName(this.baseName(true));
+	}
+
+	var COMPANY_NAME    = 33;
+	var FILE_VERSION    = 156 //145;
+	var PRODUCT_NAME    = 270 //251;
+	var PRODUCT_VERSION = 271 //252;
+
+
+	this.getCompanyName = function(){
+		return wFolder57.GetDetailsOf(wFile, COMPANY_NAME);
+	}
+
+	this.getProductName = function(){
+		return wFolder57.GetDetailsOf(wFile, PRODUCT_NAME);
+	}
+
+	this.getFileVersion = function(){
+		return wFolder57.GetDetailsOf(wFile, FILE_VERSION);
+	}
+
+	this.getProductVersion = function(){
+		return wFolder57.GetDetailsOf(wFile, PRODUCT_VERSION);
+	}
+}
+
+function batchfile(addr){
+	this.newMethod = textfile
+	this.newMethod(addr)
+	this.newMethod = abstractExecutable
+	this.newMethod(addr)
+}
+
+function mediafile(addr){
+	AbstractClass.apply(this, [mediafile])
+	this.newMethod = file
+	this.newMethod(addr)
+
+	var winShell = new ActiveXObject("Shell.Application");
+	var wFolder57 = winShell.Namespace(this.parentObject().getPath().convertToSlashes());
+	if (wFolder57){
+		var wFile = wFolder57.ParseName(this.baseName(true));
+	}
+
+	var COPYRIGHT = 25
+	var LENGTH = 27; // Windows Vista+
+	// var LENGTH = 21; // Windows XP
+
+
+	this.getCopyright = function(){
+		return wFolder57.GetDetailsOf(wFile, COPYRIGHT)
+	}
+
+	this.getLength = function(){
+		return wFolder57.GetDetailsOf(wFile, LENGTH);
+	}
+
+	this.getBitRate = function(){
+		var BITRATE = 28
+		return wFolder57.GetDetailsOf(wFile, BITRATE);
+	}
+}
+
+function musicfile(addr){
+	this.newMethod = mediafile
+	this.newMethod(addr)
+}
+
+function videofile(addr){
+	this.newMethod = mediafile
+	this.newMethod(addr)
+
+	var winShell = new ActiveXObject("Shell.Application");
+	var wFolder57 = winShell.Namespace(this.parentObject().getPath().convertToSlashes());
+	if (wFolder57){
+		var wFile = wFolder57.ParseName(this.baseName(true));
+	}
+
+	this.getVideoCompression = function(){
+		return wFolder57.GetDetailsOf(wFile, 280);
+	}
+
+	this.getTotalBitrate = function(){
+		return wFolder57.GetDetailsOf(wFile, 286);
+	}
+
+
+
+}
+
+function imagefile(addr){
+	this.newMethod = file
+	this.newMethod(addr)
+
+	var winShell = new ActiveXObject("Shell.Application");
+	var wFolder57 = winShell.Namespace(this.parentObject().getPath());
+	if (wFolder57){
+		var wFile = wFolder57.ParseName(this.baseName(true));
+	}
+
+	this.getWidth = function(){
+		var DIMENSIONS = 31
+		return wFolder57.GetDetailsOf(wFile, DIMENSIONS).split(' x ')[0];
+	}
+
+	this.getHeight = function(){
+		var DIMENSIONS = 31
+		return wFolder57.GetDetailsOf(wFile, DIMENSIONS).split(' x ')[1];
+	}
+}

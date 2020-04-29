@@ -1,0 +1,26 @@
+String.prototype.pad = function(newLength){
+	res = this
+
+	if (res.length < newLength){
+		while (res.length < newLength){
+			res += " "
+		}
+	} else {
+		res = res.substring(0, newLength)
+	}
+
+	return res
+}
+
+Number.prototype.pad = function(newLength){
+	res = ""
+	delta = newLength - this.toString().length
+
+	for (i = 0; i < delta; i++){
+		res += "0"
+	}
+
+	res += this
+
+	return res
+}

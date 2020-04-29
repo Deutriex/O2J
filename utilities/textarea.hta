@@ -1,0 +1,23 @@
+<html>
+<head>
+</head>
+<script>
+	function fixList(){
+		listToFix = document.getElementById('magic').value;
+		listToFix = listToFix.replace(/\\t\\t/g, "\\n\\t\\t")
+	
+		while (listToFix.indexOf("\\n") != -1){
+			listToFix = listToFix.replace(/\\n\\n/g, "\\n")
+		}
+
+		document.getElementById('magic').value = listToFix
+		document.getElementById('magic').select();
+	}
+</script>
+
+
+<body style="overflow: hidden">
+<textarea id="magic" style="width: 100%; height: 100%" onclick="this.value = '';" onkeyup="fixList();"></textarea>
+</body>
+
+</html>

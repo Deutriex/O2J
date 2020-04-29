@@ -1,0 +1,169 @@
+function tabset(tabArray, tabContainer, varParam){
+	var reallyThis
+	var activeTab = -1
+	var attactedFunctions = ""
+	var activeTabClassName = "activeTab"
+	var subObj = null
+	
+	if (typeof(varParam) == "string"){
+		activeTabClassName = varParam
+	}
+	
+	this.getActiveTab = function(){
+		return activeTab
+	}
+
+	this.setInstancePointer = function(thisFunc){
+		reallyThis = thisFunc
+	}
+
+	this.attachCalls = function(functionsString){
+		attactedFunctions = functionsString
+	}
+
+	this.setActiveClassName = function(newClassName){
+		if (typeof(varParam) == "string"){
+			activeTabClassName = newClassName
+		}
+	}
+	
+	this.setSubObject = function(newObj){
+		if (typeof(newObj) == "object"){
+			subObj = newObj
+		}
+		
+		//alert(subObj instanceof tabset)
+	}
+	
+	function getTabContainer(){
+		if (tabContainer.children[0].tagName == "TABLE"){
+			tarObj = tabContainer.children[0].rows[0].cells
+		} else {
+			tarObj = tabContainer.children
+		}
+		
+		return tarObj
+	}
+
+	this.setTabVisibility = function(tIdx, tStatus){
+		defStatus = ["none", "inline"]
+		tarObj = getTabContainer()
+		tarObj[tIdx].style.display = defStatus[tStatus]
+	}
+
+	if (tabContainer.innerHTML == ""){
+		var tabContainerTable = tabContainer.children[0]
+		var tabLine_old = tabContainerTable.insertRow()
+
+		var tabLine = tabContainer.children[0].rows[0]
+	
+
+		newTabContainerTable = document.createElement('TABLE')
+		newTabContainerTable.id = "o2jTabset"
+		newTabContainerTable.cellPadding = 0
+		newTabContainerTable.cellSpacing = 0
+		newTabContainerTable.style.height = "30px"
+		tabContainer.appendChild(newTabContainerTable)
+
+
+	
+		for (l = 0; l < tabArray.length; l++){
+			tabItem = tabLine.insertCell()
+			tabItem.vAlign = "top"
+
+			if (!(tabArray instanceof Array)){
+				if (tabArray[l].children[1]){
+					if (tabArray[l].children[1].value == 0){
+						tabItem.style.display = "none"
+					}
+				}
+			}
+
+			newTabElement = document.createElement('TABLE')
+			newTabElement.cellPadding = 0
+			newTabElement.cellSpacing = 0
+			newTabContainerTable.style.height = "30px"
+
+			tabItem.onclick = function(){
+				reallyThis.setActiveTab(this.cellIndex)
+				//alert(this.getElementsByTagName("INPUT")[0].value)
+
+				if (this.cellIndex !== undefined){
+					eval(attactedFunctions.fullReplace('tabIdx',this.cellIndex))
+				} else {
+					eval(attactedFunctions.fullReplace('tabIdx',this.getElementsByTagName("INPUT")[0].value))
+				}
+			}
+			
+			newTabElement.id = "o2jTabitem"
+			tabItem.appendChild(newTabElement)
+
+			tabIdxRecord = document.createElement('INPUT')
+			tabIdxRecord.value = l
+			tabIdxRecord.type = "hidden"
+			tabItem.appendChild(tabIdxRecord)
+
+			getTabItem = tabItem.getElementsByTagName("TABLE")[0]	
+			newLine_tabItem = getTabItem.insertRow()
+			leftPiece   = newLine_tabItem.insertCell()
+			leftPiece.className = "left"
+			leftPiece.width = 15
+
+			middlePiece = newLine_tabItem.insertCell()
+
+			if (!(tabArray instanceof Array)){
+				middlePiece.innerText = tabArray[l].children[0].value
+			} else {
+				middlePiece.innerText = tabArray[l]
+			}
+
+			middlePiece.className = "middle"
+
+			rightPiece  = newLine_tabItem.insertCell()
+			rightPiece.className = "right"
+			rightPiece.width = 15
+		}
+	}
+	
+	(this.setActiveTab = function(idx, idx2){
+	
+		if (idx === undefined){
+			var gTarget = event.srcElement || event.target
+			
+		
+			while (gTarget.tagName != "TD" && gTarget.tagName != "A" && gTarget.tagName != "BODY"){
+				gTarget = event.srcElement.parentElement || event.target.parentNode
+			}
+			
+			if (gTarget.tagName == "TD"){
+				idx = gTarget.cellIndex
+			} else {
+				parentX = gTarget.parentElement || gTarget.parentNode;
+				idx = Array.prototype.indexOf.call(parentX.children, gTarget);
+			}
+		}
+		
+		tarObj = getTabContainer()
+		
+		for (h = 0; h < tabArray.length; h++){
+			if (!(tabArray instanceof Array)){
+				tabArray[h].style.display = "none"
+			}
+			tarObj[h].className = tarObj[h].className.split(" " + activeTabClassName).join("")
+		}
+		
+		if (!(tabArray instanceof Array)){
+			tabArray[idx].style.display = "initial"
+		}
+		
+		tarObj[idx].className += " " + activeTabClassName
+		eval(attactedFunctions.fullReplace('tabIdx',this.cellIndex))
+		activeTab = idx
+
+		if (idx2 !== undefined && subObj !== null) subObj.setActiveTab(idx2)
+
+		
+	})(0)
+
+
+}

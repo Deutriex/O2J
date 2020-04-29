@@ -1,0 +1,87 @@
+function angle(varAngle){
+	var rad2deg = 360/(2*Math.PI)
+	var angleRad = 0
+	var O2J_INVALID_DATATYPE = "Unknow or invalid angle unit"
+
+	this.setAngle = function(newAngle){
+		if (newAngle == undefined) newAngle = 0
+
+		if (!isNaN(newAngle)){
+			angleRad = newAngle
+		} else {
+			isInDegrees = /\d+°/
+
+			if (isInDegrees.test(newAngle)){
+				angleRad = parseFloat(newAngle)/rad2deg
+			} else {
+				throw new Error(O2J_INVALID_DATATYPE)
+			}
+		}
+		completedCycles = parseInt(angleRad/(2*Math.PI))
+		angleRad -= completedCycles*(2*Math.PI)
+	}
+
+	this.inDegrees = function(){
+		return angleRad*rad2deg + "°"
+	}
+
+	this.inRadians = function(){
+		return angleRad + " rad"
+	}
+
+	this.toString = function(){
+		return angleRad
+	}
+
+
+	this.setAngle(varAngle)
+}
+
+
+function complex(real, imag){
+	if (real == undefined) real = 0
+	if (imag == undefined) imag = 0
+
+	this.getReal = function(){
+		return real
+	}
+
+	this.getImaginary = function(){
+		return imag
+	}
+
+	this.toString = function(){
+		realF = ""
+		imagF = ""
+
+		if (real != 0){
+			realF += real
+		}
+
+		if (imag != 0){
+			if (imag >  0 && realF != "") imagF += "+"
+			if (imag == -1) imagF += "-"
+			if (Math.abs(imag) != 1) imagF += imag
+			imagF += "i"
+		}
+		
+		return realF + imagF
+	}
+
+	this.add = function(complex2){
+		newReal = this.getReal()+complex2.getReal()
+		newImag = this.getImaginary()+complex2.getImaginary()
+		real = newReal
+		imag = newImag
+		return this
+	}
+
+	this.multiply = function(complex2){
+		newReal = +(this.getReal()*complex2.getReal()) - +(this.getImaginary()*complex2.getImaginary())
+		newImag = +(this.getReal()*complex2.getImaginary()) + +(this.getImaginary()*complex2.getReal())
+		real = newReal
+		imag = newImag
+		return this
+
+	}
+}

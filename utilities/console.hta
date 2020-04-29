@@ -1,0 +1,401 @@
+<!doctype html>
+<html>
+<head>
+
+<meta http-equiv="x-ua-compatible" content="IE=EmulateIE10">
+<script src="../fundamentals.o2j"></script>
+<script src="../GUIEnhancements.o2j"></script>
+<script src="../files.o2j"></script>
+<script src="../tabs.o2j"></script>
+<script src="../dplxml-parser.o2j"></script>
+<script src="../dplxml-editor.o2j"></script>
+<script src="../diba.o2j"></script>
+<script src="../../js/ajax.js"></script>
+
+
+<meta charset="utf-8">
+<title>The Airisu console</title>
+
+<hta:application
+	innerBorder = "no"
+	contextMenu = "no"
+	selection = "no"
+>
+
+<style>
+	BODY {padding: 0px; margin: 0px; overflow-y: auto; background: black; user-select: no; -ms-user-select: no}
+	TABLE#consoleIO {width: 100%}
+	TABLE#consoleIO TD {color: white; font-family: Consolas; font-size: 9pt; padding-right: 10px}
+	TEXTAREA {background: transparent; border: 0px solid; color: #FF007F; width: 100%; overflow: hidden; font-family: Lucida Console}
+	TEXTAREA.past {color: #7F00FF !important}
+	
+	#consoleMode									{width: 100%; height: 100%}
+
+	#consoleModes  								{background: white}
+	#consoleModes TABLE                  		{height: 100%}
+	#consoleModes TABLE TD 						{margin: 0px; padding: 0px; color: black; font-family: Lucida Sans Unicode; font-size: 12pt}
+	#consoleModes TABLE TD.activeTab TD.left   	{background: url(../graphics/tab_left.png) transparent right center no-repeat}
+	#consoleModes TABLE TD.activeTab TD.middle 	{background: url(../graphics/hovertab.png); color: #FF8000}
+	#consoleModes TABLE TD.activeTab TD.right  	{background: url(../graphics/tab_right.png) transparent left center no-repeat}
+
+</style>
+
+<script>
+
+	window.onerror = function (msg, url, lineNo, columnNo, error) {
+		var string = msg.toLowerCase();
+		var substring = "script error";
+		if (string.indexOf(substring) > -1){
+			alert('Script Error: See Browser Console for Detail');
+		} else {
+			var message = [
+				'Message: ' + msg,
+				'URL: ' + url,
+				'Line: ' + lineNo,
+				'Column: ' + columnNo,
+				'Error object: ' + JSON.stringify(error)
+			].join(' - ');
+
+			alert(message);
+		}
+
+		return false;
+	};
+
+	var tempObj = {innerHTML: ""}
+
+	var Application = new (function(){
+		var lastApp = ""
+
+		this.open = function(getPath){
+			document.frames['Interface'].location.href = getPath
+			document.getElementById('Interface').style.display = "inline"
+			lastApp = getPath
+		}
+
+		this.editSourceCode = function(){
+			system.exec("C:\\windows\\system32\\notepad.exe \"" + lastApp + "\"")
+		}
+
+		this.reload = function(){
+			document.frames['Interface'].location.reload()
+		}
+
+		this.close = function(){
+			document.frames['Interface'].src = "about:blank"
+			document.getElementById('Interface').style.display = "none"
+		}
+	})()
+
+	var Console = new (function(){
+		var librariesFolder = [new folder(program.getPath() + "\\.."), new folder(program.getPath() + "\\mySnippets")]
+		var evalContext = window
+		var i
+		var j
+	
+		for (j = 0; j < librariesFolder.length; j++){
+
+			var libraries = librariesFolder[j].fileList()
+		
+			for (i = 0; i < libraries.length; i++){
+				libraryFile = new file(libraries[i])
+				libraryName = libraryFile.baseName()
+
+				extension = libraryFile.getExtension().toUpperCase()
+				excludeThem = /(^fundamentals)|(^files)|(^diba)|(^DPLXML-parser)|(^DPLXML-editor)|(^tabs)/i
+
+				if (!excludeThem.test(libraryName)){
+					switch (extension){
+						case "JS":
+						case "O2J":
+							document.write('<scr' + 'ipt src="'+libraryFile.getPath()+'"></scr'+'ipt>')
+							break
+						case "O2VB":
+							document.write('<scr' + 'ipt src="'+libraryFile.getPath()+'" language="VBScript"></scr'+'ipt>')
+							break
+					}
+				}
+			}
+		}
+
+		this.setContext = function(newContext){
+			switch (newContext){
+				case "Application":
+					evalContext = frames[0].frames[0]
+					break;
+				default:
+					evalContext = window
+			}
+		}
+
+		this.getContext = function(){
+			switch (evalContext){
+				case frames[0].frames[0]:
+					return "Application";
+				default:
+					return "Console";
+			}
+		}
+
+		this.cleanAll = function(){
+			while (consoleIO.rows.length){
+				consoleIO.deleteRow()
+			}
+		}
+
+		this.output = function(outputString, setColor){
+			newLine = consoleIO.insertRow()
+			newCell = newLine.insertCell()
+			newCell.innerText = outputString
+			newCell.style.color = setColor
+		}
+
+		this.input = function(getContent){
+			getContent = getContent || ""
+			newLineI = consoleIO.insertRow()
+
+			newCellI = newLineI.insertCell()
+			newCellI.style.width = newCell.innerText.length*8 + "px"
+			newCellI.valign = "top"
+			newCellI.innerHTML = "<textarea style=\"height:1em;\" onkeydown=\"allowTabCharacter()\">"+getContent+"</textarea>"
+			getTextareas = document.getElementsByTagName("TEXTAREA")
+			makeAutoResizable(getTextareas[getTextareas.length-1])
+		}
+		
+		this.log = this.output
+
+		this.welcomeString = function(){
+			return "Welcome to the O2J Console!\n&copy;2006 - 2016 Deutriex Corporation. All Rights Reserved"
+		}
+
+		this.loadedLibraries = function(){
+			for (i = 0; i < document.getElementsByTagName("SCRIPT").length; i++){
+				this.output(document.getElementsByTagName("SCRIPT")[i].src)
+			}
+		}
+
+		this.getClasses = function(libraryAddr){
+			libraryFile = new textfile(libraryAddr)
+			librarySource = new String(libraryFile.passThru())
+
+			padraoClasses = /function\x20+[A-Za-z0-9]+\x28[A-Za-z0-9\s\x2C]*\x29/igm
+			everythingFound = librarySource.match(padraoClasses)
+
+			if (everythingFound){
+				if (!arguments.callee.caller){
+					for (h = 0; h < everythingFound.length; h++){
+						this.output(everythingFound[h])
+					}
+				}
+				return everythingFound
+			}
+
+			return []
+			
+		}
+
+		this.getMethods = function(libraryAddr){
+			libraryFile = new textfile(libraryAddr)
+			librarySource = new String(libraryFile.passThru())
+
+			classesCollection = this.getClasses(libraryAddr)
+			classesContent = new Array()
+
+			alert(classesCollection)
+			for (bi = 0; bi < classesCollection.length-1; bi++){
+				classesContent[bi] = librarySource.substring(librarySource.indexOf(classesCollection[bi]), librarySource.indexOf(classesCollection[bi+i]))
+				//alert(classesCollection[bi] + lineBreak + lineBreak + librarySource.indexOf(classesCollection[bi]) + lineBreak + librarySource.indexOf(classesCollection[parseInt(bi)+i]))
+				alert(classesContent[bi])
+			}
+
+			padraoMetodos = /this\x2E[A-Za-z0-9]+\s*=\s*function\x28[A-Za-z0-9\s\x2C]*\x29/igm
+			everythingFound = librarySource.match(padraoMetodos)
+
+			if (everythingFound){
+				for (h = 0; h < everythingFound.length; h++){
+					this.output(everythingFound[h])
+				}
+			}		
+		}
+
+
+		this.execFunc = function(){
+			if (event.shiftKey && event.keyCode == 13){
+				getTextareas = document.querySelectorAll("TABLE TEXTAREA")
+				getLastTextareaValue = getTextareas[getTextareas.length-1].value
+				//getLastTextareaValue = getLastTextareaValue.fullReplace("document.", "document.frames['Interface'].document.")
+
+				illegalAccesses = /(^window\x2E)|(^location\x2E)|(^document\x2E)/m
+				consoleOnlyCommands = /(Console\x2E)|(Application\x2E)/
+	
+				if (illegalAccesses.test(getLastTextareaValue) && this.getContext() == "Console"){
+					Console.output("Illegal attempt to access to console's private objects." + lineBreak + "Please do not use the window, document or location objects on Console context","#FF8000")
+				} else {
+
+					try {
+	
+						if (consoleOnlyCommands.test(getLastTextareaValue)){
+							Console.output(eval(getLastTextareaValue))
+						} else {
+							Console.output(evalContext.eval(getLastTextareaValue))
+						}
+			
+					} catch (err){
+				
+						Console.output("Unable to execute the function. Please review the command " + lineBreak + "Error message: \x0D\x0A" + err.stack, "#FF8000")
+
+
+/*						for (errElement in err){
+							Console.output(errElement + lineBreak,"#FFFF00")
+						}
+*/
+	
+					}
+				}
+
+				makeAllInputsReadOnly()
+				
+				if (getLastTextareaValue.indexOf('Console.getAirisu') == -1){
+					Console.input()
+				} else {
+					//alert("Deu certo!")
+				}
+
+			}
+		}
+
+		this.restart = function(){
+			location.reload()
+		}
+		
+		this.getAirisuResponseCallback = function(locat, pnam, pval, cbk){
+			var APC = new AjaxPoweredContainer(tempObj)
+			APC.setAjaxPage(locat)
+			APC.getDados(pnam, pval, undefined, function(){Console.output(tempObj.innerHTML); makeAllInputsReadOnly(); cbk()})
+		}
+				
+		this.getAirisuLibEval = function(locat, testFile, param){
+			var APC = new AjaxPoweredContainer(tempObj)
+			APC.setAjaxPage(locat)
+			APC.getDados(testFile, escape(param), undefined, function(){Console.output(tempObj.innerHTML); makeAllInputsReadOnly(); Console.input()})
+		}
+		
+		this.getLastData = function(){
+			getLastOne = document.querySelector("#consoleIO > TBODY > TR:last-child > TD:first-child")
+			if (getLastOne) {
+				if (getLastOne.children >= 1 && getLastOne.children[0].tagName == "TEXTAREA"){
+					getLastOne = document.querySelector("#consoleIO > TBODY > TR:nth-last-child(2) > TD:first-child")
+					if (getLastOne){
+						return getLastOne.innerText
+					}
+				}
+				
+				return getLastOne.innerText
+			}
+			
+			return null			
+		}
+		
+		this.copyToClipboard = function(copyThis){
+			document.querySelector("#tacpb").value = copyThis
+			document.querySelector("#tacpb").select()
+			var successful = document.execCommand('copy');
+		}
+		
+		this.help = function(){
+			commands = []
+			objs = []
+			objs["Application"] = Application
+			objs["Console"] = Console
+		
+			
+			for (eachElem in objs){
+				if (objs.hasOwnProperty(eachElem)){
+					for (eachElem2 in objs[eachElem]){
+						if (objs[eachElem].hasOwnProperty(eachElem2)){
+							commands.push(eachElem + "." + eachElem2)
+						}
+					}
+				}
+			}
+			
+			Console.output(commands.join("\x0D\x0A"))
+		}
+	
+		
+	})()
+
+
+
+	function makeAutoResizable(taObject){
+		var observe
+		if (window.attachEvent) {
+			observe = function (element, event, handler) {
+				element.attachEvent('on'+event, handler);
+			}
+		} else {
+			observe = function (element, event, handler) {
+				element.addEventListener(event, handler, false);
+			}
+		}
+
+	
+		var text = taObject //document.getElementById(taIndex)
+		function resize(){
+			text.style.height = 'auto'
+			text.style.height = text.scrollHeight+'px'
+		}
+
+		/* 0-timeout to get the already changed text */
+	
+		function delayedResize() {
+			window.setTimeout(resize, 0)
+		}
+
+		observe(text, 'change',  resize)
+		observe(text, 'cut',     delayedResize)
+		observe(text, 'paste',   delayedResize)
+		observe(text, 'drop',    delayedResize)
+		observe(text, 'keydown', delayedResize)
+
+		text.focus()
+		text.select()
+		resize()
+	}
+
+	function makeAllInputsReadOnly(){
+		for (i = 0; i < document.getElementsByTagName("TEXTAREA").length; i++){
+			document.getElementsByTagName("TEXTAREA")[i].readOnly = true
+			document.getElementsByTagName("TEXTAREA")[i].className = "past"
+		}
+		
+	}
+
+
+	function allowTabCharacter(){
+		if (event.keyCode == 9){
+			if (event != null && event.srcElement && event.srcElement.value && document.selection != null) {
+				document.selection.createRange().text = '\t';
+				event.returnValue = false;
+			} else {
+				event.srcElement.value += '\t';
+				return false;
+			}
+		}
+	}
+</script>
+
+
+
+
+</head>
+<body onload="Console.output(Console.welcomeString()); Console.input()" onkeydown="Console.execFunc()">
+<textarea style="opacity: 0; left: -1000px; top: -1000px" id="tacpb"></textarea>
+
+<iframe id="Interface" name="Interface" style="position: fixed; width: 1280px; height: 720px; border: 0px; top: 0px; right: 0px; display: none" application=yes></iframe>
+
+<table id=consoleIO cellspacing=0 cellpadding=0 style="width: 100%"></table>
+
+
+</body>
+</html>

@@ -1,0 +1,5 @@
+TEXTAREA, INPUT {border: 1px solid silver; background: url(dropshadow.png) white scroll left top repeat-x; font-size: 12pt; color: black; font-family: Segoe UI}
+BUTTON, INPUT[type="button"] {border: 1px solid silver; background: url(appmenu.png) transparent scroll left middle repeat-x; font-size: 12pt; color: navy; font-family: Segoe UI}
+BUTTON:hover, INPUT[type="button"] {border: 1px solid silver; background: url(appmenu.png) transparent scroll left middle repeat-x; font-size: 12pt; color: orange; font-family: Segoe UI}
+
+.navHover {background: url(itemhover.png) orangered}
